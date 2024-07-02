@@ -1,77 +1,69 @@
-#include<ff/ff.hpp>
-#include<ff/farm.hpp>
+
+
 #include <iostream>
-#include <random>
 #include <vector>
-using namespace ff;
-
-using task_t=std::pair<float, size_t>;
-const size_t minVsize = 512;
-const size_t maxVsize = 8192;
-
-// a simple pipeline
-// emitter
-
-struct Emitter: ff_node_t<task_t> {
-    Emitter() {}
-    // print a message when the emitter starts
-    int svc_init() {
-        std::cout << "Emitter started" << std::endl;
-        return 0;
-    }
-    // function that sends out 10 numbers
-    task_t* svc(task_t *task) {
-        for(int i=0; i<10; ++i) {
-            ff_send_out(new int(i));
+#include <thread>
+#include <random>
+#include <cassert>
+#include <chrono>
+#include<cmath>
+void compute_stencil(std::vector<std::vector<float>> &M, const uint64_t &N) {
+    for(uint64_t diag = 1; diag< N; ++diag) {        // for each upper diagonal
+        for(uint64_t i = 0; i< (N-diag); ++i) {// for each elem. in the diagonal
+// std::cout << "Pos: " << i << ", " << i+diag << std::endl;
+            M[i][i+diag] = 0;
+            for(uint64_t j =0; j<diag; ++j){
+// std::cout << "\t"<< i << ", " << i+j << " * " << i+diag -j << ", " << i+diag << std::endl;
+                M[i][i+diag] += M[i][i+j]*M[i+diag -j][i+diag];
+            }
+            M[i][i+diag] = std::cbrt(M[i][i+diag]);
         }
-        return task;
     }
-    // print a message when the emitter ends
-    void svc_end() {
-        std::cout << "Emitter ended" << std::endl;
-    }
-};
+}
 
-
-
-// worker
-struct Worker: ff_node_t<task_t> {
-    Worker() {}
-    // print a message when the worker receives a number
-    task_t* svc(task_t* task) {
-        int* number = (int*)task;
-        std::cout << "Received number: " << *number << std::endl;
-        delete number;
-        return task;
-    }
-    // print a message when the worker ends
-    void svc_end() {
-        std::cout << "Worker ended" << std::endl;
-    }
-};
-
-// collector
-
-struct Collector: ff_node_t<float> {
-    Collector() {}
-    float* svc(task_t* task) {
-
-        std::cout << "Received result: "  << task->first << std::endl;
-        delete task;
-
-        return GO_ON;
-    }
+int main( int argc, char *argv[] ) {
+    uint64_t N = 512;    // default size of the matrix (NxN)
     
-    void svc_end() {
-        std::cout << "Collector ended" << std::endl;
+    if (argc != 1 && argc != 2) {
+        std::printf("use: %s N\n", argv[0]);
+        std::printf("     N size of the square matrix\n");
+        return -1;
     }
-};
+    if (argc > 1) {
+        N = std::stol(argv[1]);
+    }
 
-int main() {
-    // create the pipeline
-    ff_pipeline pipe;
-    Emitter emitter;
-    Worker worker;
-    Collector collector;
 
+	// allocate the matrix
+	std::vector<std::vector<float>> M(N, std::vector<float>(N, 0.0));
+
+    //init
+
+    for (uint64_t i = 0; i < N; ++i) {
+        for (uint64_t j = 0; j < N; ++j) {
+            M[i][j] = 0;
+        }
+    }
+
+    for (uint64_t i = 0; i < N; ++i) {
+        M[i][i] = (float(i+1))/N;
+    }
+
+    // compute stencil
+    auto start = std::chrono::steady_clock::now();
+    compute_stencil(M, N);
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end-start;
+
+    std::cout << "Elapsed time: " << elapsed_seconds.count() << "s\n";
+    // cout M
+    for (uint64_t i = 0; i < N; ++i) {
+        for (uint64_t j = 0; j < N; ++j) {
+            std::cout << M[i][j] << " ";
+        }
+        std::cout << std::endl;
+    } 
+
+    std::cout <<M[N-1][N-1] << std::endl;
+    return 0;
 }
