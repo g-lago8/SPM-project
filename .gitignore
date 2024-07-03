@@ -3,3 +3,7 @@ datasets
 *.a
 *.bin
 .vscode
+Esercizio1/
+*.pdf
+*.exe
+bin/
