@@ -15,7 +15,7 @@ struct Task{
     size_t i;
 };
 
-void compute_stencil_one_pos(
+void inline compute_stencil_one_pos(
     std::vector<std::vector<float>> &M,
     const uint64_t &N,
     const uint64_t &diag,
@@ -28,7 +28,7 @@ void compute_stencil_one_pos(
     //M[i][i+diag] = std::cbrt(M[i][i+diag]);
 }
 
-void compute_stencil(std::vector<std::vector<float>> &M, const uint64_t &N){
+void inline compute_stencil(std::vector<std::vector<float>> &M, const uint64_t &N){
         
         for(uint64_t diag = 1; diag< N; ++diag)        // for each upper diagonal
             for(uint64_t i = 0; i< (N-diag); ++i)      // for each elem. in the diagonal
@@ -36,7 +36,7 @@ void compute_stencil(std::vector<std::vector<float>> &M, const uint64_t &N){
         
     
 }
-
+ff::barrierSelector bs;
 struct DiagonalSelector: ff::ff_minode_t<float, size_t>{
     size_t N;
     size_t count_done = N-1;
@@ -86,7 +86,7 @@ struct Worker: ff::ff_monode_t<Task, float>{
 
 
 
-void compute_stencil(std::vector<std::vector<float>> &M, const uint64_t &N, int nworkers) {
+void compute_stencil_par(std::vector<std::vector<float>> &M, const uint64_t &N, int nworkers) {
 
     auto make_farm =[&]() {
                             std::vector<std::unique_ptr<ff::ff_node> > W;
@@ -100,7 +100,9 @@ void compute_stencil(std::vector<std::vector<float>> &M, const uint64_t &N, int 
     farm.remove_collector();
     DiagonalSelector ds(N);
     ElementDispatcher ed(M, N);
-    ff::ff_Pipe<Task> pipe(ds, ed, farm);
+    // join the stages
+    ff::ff_comb combined_emitter(ds, ed);
+    ff::ff_Pipe<Task> pipe(combined_emitter, farm);
     pipe.wrap_around();
     // run the pipe
     if (pipe.run_and_wait_end()<0) {
@@ -140,13 +142,13 @@ int main( int argc, char *argv[] ) {
         M[i][i] = 0.1;
     }
     auto M1 = M;
-    // compute stencil
+    // compute stencil parallel
     auto start = std::chrono::steady_clock::now();
-    compute_stencil(M, N, nworkers);
+    compute_stencil_par(M, N, nworkers);
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed_seconds = end-start;
     std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
-
+    // compute stencil sequential
     auto start_seq = std::chrono::steady_clock::now();
     compute_stencil(M1, N);
     auto end_seq = std::chrono::steady_clock::now();

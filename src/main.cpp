@@ -7,19 +7,29 @@
 #include <cassert>
 #include <chrono>
 #include<cmath>
-void compute_stencil(std::vector<std::vector<float>> &M, const uint64_t &N) {
-    for(uint64_t diag = 1; diag< N; ++diag) {        // for each upper diagonal
-        for(uint64_t i = 0; i< (N-diag); ++i) {// for each elem. in the diagonal
-// std::cout << "Pos: " << i << ", " << i+diag << std::endl;
-            M[i][i+diag] = 0;
-            for(uint64_t j =0; j<diag; ++j){
-// std::cout << "\t"<< i << ", " << i+j << " * " << i+diag -j << ", " << i+diag << std::endl;
-                M[i][i+diag] += M[i][i+j]*M[i+diag -j][i+diag];
-            }
-            M[i][i+diag] = std::cbrt(M[i][i+diag]);
-        }
-    }
+
+void inline compute_stencil_one_pos(
+    std::vector<std::vector<float>> &M,
+    const uint64_t &N,
+    const uint64_t &diag,
+    const uint64_t &i)
+{
+    M[i][i+diag] = 0;
+    for(uint64_t j =0; j<diag; ++j)
+        M[i][i+diag] += M[i][i+j]*M[i+diag -j][i+diag];
+
+    M[i][i+diag] = std::cbrt(M[i][i+diag]);
 }
+
+void compute_stencil(std::vector<std::vector<float>> &M, const uint64_t &N) {
+    
+    for(uint64_t diag = 1; diag< N; ++diag)        // for each upper diagonal
+        for(uint64_t i = 0; i< (N-diag); ++i)      // for each elem. in the diagonal
+            compute_stencil_one_pos(M, N, diag, i);  
+    
+}
+
+
 
 int main( int argc, char *argv[] ) {
     uint64_t N = 512;    // default size of the matrix (NxN)
