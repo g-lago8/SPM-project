@@ -21,9 +21,11 @@ void inline compute_stencil_one_pos(
     const uint64_t &diag,
     const uint64_t &i)
 {
-    M[i][i+diag] = 0;
+    float temp = 0;
     for(uint64_t j =0; j<diag; ++j)
-        M[i][i+diag] += M[i][i+j]*M[i+diag -j][i+diag];
+        temp += M[i][i+j]*M[i+diag -j][i+diag];
+    
+    M[i][i+diag] = temp;
 
     //M[i][i+diag] = std::cbrt(M[i][i+diag]);
 }
@@ -36,7 +38,6 @@ void inline compute_stencil(std::vector<std::vector<float>> &M, const uint64_t &
         
     
 }
-ff::barrierSelector bs;
 struct DiagonalSelector: ff::ff_minode_t<float, size_t>{
     size_t N;
     size_t count_done = N-1;
