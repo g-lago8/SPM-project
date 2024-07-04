@@ -2,10 +2,10 @@
 #include<vector>
 #include<chrono>
 #include<random>
-
 #include<ff/ff.hpp>
 #include<ff/farm.hpp>
 #include<ff/utils.hpp>
+
 using namespace std;
 
 struct Task{
@@ -13,28 +13,40 @@ struct Task{
     size_t N;
     size_t diag;
     size_t i;
+    size_t chunksize;
 };
 
-void inline compute_stencil_one_pos(
+void inline compute_stencil_one_chunk(
     std::vector<std::vector<float>> &M,
     const uint64_t &N,
     const uint64_t &diag,
-    const uint64_t &i)
+    uint64_t &i,
+    const uint64_t &chunksize)
 {
-    float temp = 0;
-    for(uint64_t j =0; j<diag; ++j)
-        temp += M[i][i+j]*M[i+diag -j][i+diag];
-    
-    M[i][i+diag] = temp;
+    auto k = i;
+    size_t end = min(i + chunksize, N-diag);
+    for(; i<end; ++i){
+        float temp = 0;
+        for(uint64_t j =0; j<diag; ++j){
+            temp += M[k][k+j]*M[k+diag -j][k+diag];
+        }
+        
+        M[k][k+diag] = temp;
 
-    //M[i][i+diag] = std::cbrt(M[i][i+diag]);
+        M[k][k+diag] = std::cbrt(M[k][k+diag]);
+    }
 }
 
 void inline compute_stencil(std::vector<std::vector<float>> &M, const uint64_t &N){
         
         for(uint64_t diag = 1; diag< N; ++diag)        // for each upper diagonal
-            for(uint64_t i = 0; i< (N-diag); ++i)      // for each elem. in the diagonal
-                compute_stencil_one_pos(M, N, diag, i);  
+            for(uint64_t i = 0; i< (N-diag); ++i){      // for each elem. in the diagonal
+                auto temp = 0.0;
+                for (uint64_t j = 0; j< diag; ++j)     // for each elem. in the stencil
+                    temp += M[i][i+j]*M[i+diag -j][i+diag];
+                M[i][i+diag] = temp;
+                M[i][i+diag] = std::cbrt(M[i][i+diag]);
+            }
         
     
 }
@@ -45,7 +57,6 @@ struct DiagonalSelector: ff::ff_minode_t<float, size_t>{
     size_t diag = 0;
 
     size_t* svc(float *task){
-
         if(++count_done == N-diag){
             diag++;
             count_done = 0;
@@ -59,10 +70,11 @@ struct DiagonalSelector: ff::ff_minode_t<float, size_t>{
 };
 
 struct ElementDispatcher: ff::ff_monode_t<size_t, Task>{
-    ElementDispatcher(vector<vector<float>> &M, size_t N):M(M), N(N){}
+    ElementDispatcher(vector<vector<float>> &M, size_t N, size_t chunksize = 1):M(M), N(N), chunksize(chunksize){}
     Task* svc(size_t *diag){
-        for(uint64_t i = 0; i< (N- *diag); ++i){      // for each elem. in the diagonal
-            ff_send_out(new Task{M, N, *diag, i});
+        for(uint64_t i = 0; i< (N- *diag); i += chunksize){      // for each elem. in the diagonal
+            
+            ff_send_out(new Task{M, N, *diag, i, chunksize});
         }
         // wait for the workers to finish
         if (*diag == N-1) return EOS;
@@ -70,22 +82,17 @@ struct ElementDispatcher: ff::ff_monode_t<size_t, Task>{
     }
     vector<vector<float>> &M;
     size_t N;
+    size_t chunksize;
 };
 
 struct Worker: ff::ff_monode_t<Task, float>{
     float *svc(Task *task){
         float *foo = new float;
-        compute_stencil_one_pos(task->M, task->N, task->diag, task->i);
+        compute_stencil_one_chunk(task->M, task->N, task->diag, task->i, task->chunksize);
         ff_send_out_to(foo, 0);
         return GO_ON;
     }
 };
-
-
-
-
-
-
 
 void compute_stencil_par(std::vector<std::vector<float>> &M, const uint64_t &N, int nworkers) {
 
@@ -105,6 +112,7 @@ void compute_stencil_par(std::vector<std::vector<float>> &M, const uint64_t &N, 
     ff::ff_comb combined_emitter(ds, ed);
     ff::ff_Pipe<Task> pipe(combined_emitter, farm);
     pipe.wrap_around();
+
     // run the pipe
     if (pipe.run_and_wait_end()<0) {
         ff::error("running pipe");
@@ -115,10 +123,13 @@ void compute_stencil_par(std::vector<std::vector<float>> &M, const uint64_t &N, 
 int main( int argc, char *argv[] ) {
     uint64_t N = 512;    // default size of the matrix (NxN)
     int nworkers = 4;
+    size_t chunksize =1;
     
-    if (argc != 1 && argc != 2 && argc != 3) {
-        std::printf("use: %s N [nworkers]\n", argv[0]);
-        std::printf("     N size of the square matrix\n");
+    if (argc != 1 && argc != 2 && argc != 3 && argc != 4) {
+        std::printf("use: %s [N, nworkers, chunksize]\n", argv[0]);
+        std::printf("     N: size of the square matrix\n");
+        std::printf("     nworkers: number of workers\n");
+        std::printf("     chunksize: size of the chunk\n");
         return -1;
     }
     if (argc > 1) {
@@ -140,7 +151,7 @@ int main( int argc, char *argv[] ) {
     }
 
     for (uint64_t i = 0; i < N; ++i) {
-        M[i][i] = 0.1;
+        M[i][i] = float(i+1)/float(N);
     }
     auto M1 = M;
     // compute stencil parallel
@@ -160,19 +171,28 @@ int main( int argc, char *argv[] ) {
     if(N<11){
         for (uint64_t i = 0; i < N; ++i) {
             for (uint64_t j = 0; j < N; ++j) {
+                std::cout << M1[i][j] << " ";
+            }
+            std::cout << std::endl;
+        }
+        for (uint64_t i = 0; i < N; ++i) {
+            for (uint64_t j = 0; j < N; ++j) {
                 std::cout << M[i][j] << " ";
             }
             std::cout << std::endl;
         }
     }
+#if !NDEBUG
     // check the result
     for (uint64_t i = 0; i < N; ++i) {
         for (uint64_t j = 0; j < N; ++j) {
             if (M[i][j] != M1[i][j]) {
                 std::cout << "Error: M[" << i << "][" << j << "] = " << M[i][j] << " != " << M1[i][j] << std::endl;
+                std::cout << " difference: " <<M[i][j] -M1[i][j] << std::endl;
                 return -1;
             }
         }
     }
     return 0;
+#endif
 }
