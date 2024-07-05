@@ -49,7 +49,7 @@ void inline compute_stencil(std::vector<std::vector<double>> &M, const uint64_t 
 }
 
 struct Emitter: ff::ff_monode_t<bool, Task>{
-    Emitter(vector<vector<double>> &M, size_t N, int nworkers,  size_t chunksize = 1):M(M), N(N), nworkers(nworkers), chunksize(chunksize) {}
+    Emitter(vector<vector<double>> &M, size_t N, int n_workers,  size_t chunksize = 1):M(M), N(N), n_workers(n_workers), chunksize(chunksize) {}
     size_t diag =1;
     Task* svc(bool *diagonal_is_done){
         if(diagonal_is_done == nullptr){ // start of the stream
@@ -62,8 +62,8 @@ struct Emitter: ff::ff_monode_t<bool, Task>{
         if (*diagonal_is_done == false) 
             return GO_ON;
         // else, send the tasks to the workers
-        if( nworkers * chunksize > N - diag){
-            chunksize = N / nworkers;
+        if( n_workers * chunksize > N - diag){
+            chunksize = N / n_workers;
         }
         for(uint64_t i = 0; i< (N- diag); i += chunksize){      // for each elem. in the diagonal
             size_t block_size = min( N-diag-i, chunksize);
@@ -76,8 +76,8 @@ struct Emitter: ff::ff_monode_t<bool, Task>{
     }
     vector<vector<double>> &M;
     size_t N;
+    int n_workers;
     size_t chunksize;
-    int nworkers;
 };
 
 
