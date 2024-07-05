@@ -117,7 +117,7 @@ void compute_stencil_par(std::vector<std::vector<double>> &M, const uint64_t &N,
                     };
     Emitter emitter(M, N, nworkers, chunksize);
     Collector collector(N);
-    ff::ff_Farm<> farm(move(make_farm()), emitter, nworkers);
+    ff::ff_Farm<> farm(move(make_farm()), emitter, collector);
     farm.wrap_around();
     if (farm.run_and_wait_end()<0) {
         ff::error("running farm");
