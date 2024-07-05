@@ -61,16 +61,17 @@ struct Emitter: ff::ff_monode_t<bool, Task>{
         // if the diagonal is not done, do nothing
         if (*diagonal_is_done == false) 
             return GO_ON;
+        cout <<"sending diagonal "<<diag;
         // else, send the tasks to the workers
         if( n_workers * chunksize > N - diag){
             chunksize = N / n_workers;
         }
         for(uint64_t i = 0; i< (N- diag); i += chunksize){      // for each elem. in the diagonal
             size_t block_size = min( N-diag-i, chunksize);
+            *diagonal_is_done = false;
             ff_send_out(new Task{M, N, diag, i, block_size});
         }
         diag++;
-        *diagonal_is_done = false;
         if (diag == N) return EOS;
         return GO_ON;
     }
@@ -97,11 +98,14 @@ struct Collector: ff::ff_minode_t<size_t, bool>{
     Collector(size_t N):N(N){}
     bool *svc(size_t *computed){
         done += *computed;
+        std::cout <<"done: "<< done << " N-diag: " <<N-diag <<std::endl;
         if (done == N-diag){
+            cout << "sending true"<<endl;
             done = 0;
             diag++;
             diagonal_is_done = true;
         }
+        cout <<diagonal_is_done<<endl;
         ff_send_out(&diagonal_is_done);
         return GO_ON;
     }
