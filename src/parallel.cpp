@@ -9,35 +9,35 @@
 using namespace std;
 
 struct Task{
-    vector<vector<float>> &M;
+    vector<vector<double>> &M;
     size_t N;
     size_t diag;
     size_t i;
     size_t chunksize;
 };
 
+
 void inline compute_stencil_one_chunk(
-    std::vector<std::vector<float>> &M,
+    std::vector<std::vector<double>> &M,
     const uint64_t &N,
     const uint64_t &diag,
     uint64_t &i,
     const uint64_t &chunksize)
 {
-    auto k = i;
     size_t end = min(i + chunksize, N-diag);
     for(; i<end; ++i){
-        float temp = 0;
+        double temp = 0;
         for(uint64_t j =0; j<diag; ++j){
-            temp += M[k][k+j]*M[k+diag -j][k+diag];
+            temp += M[i][i+j]*M[i+diag -j][i+diag];
         }
         
-        M[k][k+diag] = temp;
+        M[i][i+diag] = temp;
 
-        M[k][k+diag] = std::cbrt(M[k][k+diag]);
+        M[i][i+diag] = std::cbrt(M[i][i+diag]);
     }
 }
 
-void inline compute_stencil(std::vector<std::vector<float>> &M, const uint64_t &N){
+void inline compute_stencil(std::vector<std::vector<double>> &M, const uint64_t &N){
         
         for(uint64_t diag = 1; diag< N; ++diag)        // for each upper diagonal
             for(uint64_t i = 0; i< (N-diag); ++i){      // for each elem. in the diagonal
@@ -47,77 +47,87 @@ void inline compute_stencil(std::vector<std::vector<float>> &M, const uint64_t &
                 M[i][i+diag] = temp;
                 M[i][i+diag] = std::cbrt(M[i][i+diag]);
             }
-        
-    
 }
-struct DiagonalSelector: ff::ff_minode_t<float, size_t>{
-    size_t N;
-    size_t count_done = N-1;
-    DiagonalSelector(size_t N): N(N){}
-    size_t diag = 0;
 
-    size_t* svc(float *task){
-        if(++count_done == N-diag){
-            diag++;
-            count_done = 0;
-            return &diag;
+struct Emitter: ff::ff_monode_t<bool, Task>{
+    Emitter(vector<vector<double>> &M, size_t N, size_t chunksize = 1):M(M), N(N), chunksize(chunksize){}
+    size_t diag =1;
+
+    Task* svc(bool *diagonal_is_done){
+        if(diagonal_is_done == nullptr){ // start of the stream
+
+            // we define diagonal_is_done as a pointer to a boolean, and set it to true to start the computation
+            diagonal_is_done = new bool;
+            *diagonal_is_done = true;
         }
-        
-        if (diag == N-1) return EOS;
-        return GO_ON;
+        // if the diagonal is not done, do nothing
+        if (*diagonal_is_done == false) {
+            return GO_ON;}
 
-    }
-};
-
-struct ElementDispatcher: ff::ff_monode_t<size_t, Task>{
-    ElementDispatcher(vector<vector<float>> &M, size_t N, size_t chunksize = 1):M(M), N(N), chunksize(chunksize){}
-    Task* svc(size_t *diag){
-        for(uint64_t i = 0; i< (N- *diag); i += chunksize){      // for each elem. in the diagonal
-            
-            ff_send_out(new Task{M, N, *diag, i, chunksize});
+        // else, send the tasks to the workers
+        for(uint64_t i = 0; i< (N- diag); i += chunksize){      // for each elem. in the diagonal
+            size_t block_size = min( N-diag-i, chunksize);
+            ff_send_out(new Task{M, N, diag, i, block_size});
         }
-        // wait for the workers to finish
-        if (*diag == N-1) return EOS;
+        diag++;
+        *diagonal_is_done = false;
+        if (diag == N) return EOS;
         return GO_ON;
     }
-    vector<vector<float>> &M;
+    vector<vector<double>> &M;
     size_t N;
     size_t chunksize;
 };
 
-struct Worker: ff::ff_monode_t<Task, float>{
-    float *svc(Task *task){
-        float *foo = new float;
+
+struct Worker: ff::ff_monode_t<Task, size_t>{
+    size_t *svc(Task *task){
         compute_stencil_one_chunk(task->M, task->N, task->diag, task->i, task->chunksize);
-        ff_send_out_to(foo, 0);
-        return GO_ON;
+       
+        return &(task -> chunksize);
     }
 };
 
-void compute_stencil_par(std::vector<std::vector<float>> &M, const uint64_t &N, int nworkers) {
+struct Collector: ff::ff_minode_t<size_t, bool>{
+    size_t done = 0;
+    size_t N;
+    size_t diag = 1;
+    bool diagonal_is_done=false;
+    
+    Collector(size_t N):N(N){}
+    bool *svc(size_t *computed){
+        done += *computed;
+        if (done == N-diag){
+            done = 0;
+            diag++;
+            diagonal_is_done = true;
+        }
+        ff_send_out(&diagonal_is_done);
+        return GO_ON;
+    }
 
+};
+
+
+
+void compute_stencil_par(std::vector<std::vector<double>> &M, const uint64_t &N, int nworkers, size_t chunksize) {
     auto make_farm =[&]() {
-                            std::vector<std::unique_ptr<ff::ff_node> > W;
+                            vector<unique_ptr<ff::ff_node> > W;
                             for(auto i=0;i<nworkers;++i)
                                 W.push_back(make_unique<Worker>());
                             return W;
                     };
+    Emitter emitter(M, N, chunksize);
+    Collector collector(N);
 
-    // make the farm
-    ff::ff_Farm<Task> farm(std::move(make_farm()));
-    farm.remove_collector();
-    DiagonalSelector ds(N);
-    ElementDispatcher ed(M, N);
-    // join the stages
-    ff::ff_comb combined_emitter(ds, ed);
-    ff::ff_Pipe<Task> pipe(combined_emitter, farm);
-    pipe.wrap_around();
-
-    // run the pipe
-    if (pipe.run_and_wait_end()<0) {
-        ff::error("running pipe");
+    // combine the nodes with a comb node
+    ff::ff_Farm<> farm(std::move(make_farm()), emitter, collector);
+    farm.wrap_around();    
+    if (farm.run_and_wait_end()<0) {
+        ff::error("running farm");
+        return;
     }
-    
+
 }
 
 int main( int argc, char *argv[] ) {
@@ -138,9 +148,12 @@ int main( int argc, char *argv[] ) {
     if (argc > 2) {
         nworkers = std::stol(argv[2]);
     }
+    if (argc > 3) {
+        chunksize = std::stol(argv[3]);
+    }
 
     // allocate the matrix
-    std::vector<std::vector<float>> M(N, std::vector<float>(N, 0.0));
+    std::vector<std::vector<double>> M(N, std::vector<double>(N, 0.0));
 
     //init
 
@@ -151,12 +164,12 @@ int main( int argc, char *argv[] ) {
     }
 
     for (uint64_t i = 0; i < N; ++i) {
-        M[i][i] = float(i+1)/float(N);
+        M[i][i] = double(i+1)/double(N);
     }
     auto M1 = M;
     // compute stencil parallel
     auto start = std::chrono::steady_clock::now();
-    compute_stencil_par(M, N, nworkers);
+    compute_stencil_par(M, N, nworkers, chunksize);
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed_seconds = end-start;
     std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
@@ -171,22 +184,22 @@ int main( int argc, char *argv[] ) {
     if(N<11){
         for (uint64_t i = 0; i < N; ++i) {
             for (uint64_t j = 0; j < N; ++j) {
-                std::cout << M1[i][j] << " ";
+                std::cout << M[i][j] << " ";
             }
             std::cout << std::endl;
         }
         for (uint64_t i = 0; i < N; ++i) {
             for (uint64_t j = 0; j < N; ++j) {
-                std::cout << M[i][j] << " ";
+                std::cout << M1[i][j] << " ";
             }
             std::cout << std::endl;
         }
     }
-#if !NDEBUG
     // check the result
+
     for (uint64_t i = 0; i < N; ++i) {
         for (uint64_t j = 0; j < N; ++j) {
-            if (M[i][j] != M1[i][j]) {
+            if (abs(M[i][j] - M1[i][j]) > 1e-4){
                 std::cout << "Error: M[" << i << "][" << j << "] = " << M[i][j] << " != " << M1[i][j] << std::endl;
                 std::cout << " difference: " <<M[i][j] -M1[i][j] << std::endl;
                 return -1;
@@ -194,5 +207,4 @@ int main( int argc, char *argv[] ) {
         }
     }
     return 0;
-#endif
 }

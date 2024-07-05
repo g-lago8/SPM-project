@@ -6,4 +6,4 @@ datasets
 Esercizio1/
 *.pdf
 *.exe
-bin/
+out/
