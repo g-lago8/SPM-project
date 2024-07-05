@@ -191,9 +191,10 @@ int main( int argc, char *argv[] ) {
     auto start_seq = std::chrono::steady_clock::now();
     compute_stencil(M1, N);
     auto end_seq = std::chrono::steady_clock::now();
-    std::chrono::duration<double> elapsed_seconds_seq = end_seq-start_seq;
-    std::cout << "elapsed time sequential: " << elapsed_seconds_seq.count() << "s\n";
-
+    chrono::duration<double> elapsed_seconds_seq = end_seq-start_seq;
+    cout << "elapsed time sequential: " << elapsed_seconds_seq.count() << "s\n";
+    cout<<"speedup: "<<elapsed_seconds_seq/elapsed_seconds<<endl;
+    cout<<"efficiency: "<<elapsed_seconds_seq/elapsed_seconds/nworkers<<endl;
     // print M
     if(N<11){
         for (uint64_t i = 0; i < N; ++i) {
