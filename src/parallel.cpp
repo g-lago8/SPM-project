@@ -127,11 +127,11 @@ void compute_stencil_par(std::vector<std::vector<double>> &M, const uint64_t &N,
 
 
 int main( int argc, char *argv[] ) {
-    uint64_t N = 512;    // default size of the matrix (NxN)
+    uint64_t N = 1024;    // default size of the matrix (NxN)
     int nworkers = 4;    // default number of workers
     size_t chunksize =1; // default size of the chunk
-    
-    if (argc != 1 && argc != 2 && argc != 3 && argc != 4) {
+    bool print_result = false;
+    if (argc >5 || argc < 1) {
         std::printf("use: %s [N, nworkers, chunksize]\n", argv[0]);
         std::printf("     N: size of the square matrix\n");
         std::printf("     nworkers: number of workers\n");
@@ -146,6 +146,9 @@ int main( int argc, char *argv[] ) {
     }
     if (argc > 3) {
         chunksize = std::stol(argv[3]);
+    }
+    if (argc > 4) {
+        print_result = bool(std::stol(argv[4]));
     }
 
     // check the input
@@ -185,16 +188,21 @@ int main( int argc, char *argv[] ) {
     compute_stencil_par(M, N, nworkers, chunksize);
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed_seconds = end-start;
-    std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
+    if (print_result)
+        std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
 
     // compute stencil sequential
     auto start_seq = std::chrono::steady_clock::now();
     compute_stencil(M1, N);
     auto end_seq = std::chrono::steady_clock::now();
     chrono::duration<double> elapsed_seconds_seq = end_seq-start_seq;
-    cout << "elapsed time sequential: " << elapsed_seconds_seq.count() << "s\n";
-    cout<<"speedup: "<<elapsed_seconds_seq/elapsed_seconds<<endl;
-    cout<<"efficiency: "<<elapsed_seconds_seq/elapsed_seconds/nworkers<<endl;
+
+    if (print_result){
+        cout << "elapsed time sequential: " << elapsed_seconds_seq.count() << "s\n";
+        cout<<"speedup: "<<elapsed_seconds_seq/elapsed_seconds<<endl;
+        cout<<"efficiency: "<<elapsed_seconds_seq/elapsed_seconds/nworkers<<endl;
+    }
+
     // print M
     if(N<11){
         for (uint64_t i = 0; i < N; ++i) {
@@ -221,6 +229,7 @@ int main( int argc, char *argv[] ) {
             }
         }
     }
-    cout << "Sburreck!"<<endl;
+    if (print_result)
+        cout << "Sburreck!"<<endl;
     return 0;
 }
