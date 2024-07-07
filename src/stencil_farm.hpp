@@ -47,27 +47,24 @@ void inline compute_stencil(std::vector<std::vector<double>> &M, const uint64_t 
     }
 }
 
-struct Emitter: ff::ff_monode_t<bool, Task> {
-    Emitter(std::vector<std::vector<double>> &M, size_t N, int n_workers, size_t chunksize = 1)
-        : M(M), N(N), n_workers(n_workers), chunksize(chunksize) {}
-
-    Task* svc(bool *diagonal_is_done) {
-        if(diagonal_is_done == nullptr) { // start of the stream
-            diagonal_is_done = new bool;
-            *diagonal_is_done = true;
-        }
-        if (*diagonal_is_done == false)
-            return GO_ON;
-        if(n_workers * chunksize > N - diag) {
+struct Emitter: ff::ff_monode_t<bool, Task>{
+    Emitter(std::vector<std::vector<double>> &M, size_t N, int n_workers,  size_t chunksize = 1):M(M), N(N), n_workers(n_workers), chunksize(chunksize) {}
+    size_t diag =1;
+    Task* svc(bool *diagonal_is_done){
+        
+        // send the tasks to the workers
+        if( n_workers * chunksize > N - diag){
             chunksize = N / n_workers;
         }
-        for(uint64_t i = 0; i < (N-diag); i += chunksize) {  // for each elem. in the diagonal
-            size_t block_size = std::min(N-diag-i, chunksize);
-            *diagonal_is_done = false;
+        for(uint64_t i = 0; i< (N- diag); i += chunksize){      // for each elem. in the diagonal
+            size_t block_size = std::min( N-diag-i, chunksize);
+            if(diagonal_is_done!=nullptr){
+                *diagonal_is_done = false;
+            }
             ff_send_out(new Task{M, N, diag, i, block_size});
         }
         diag++;
-        if(diag == N) return EOS;
+        if (diag == N) return EOS;
         return GO_ON;
     }
 
@@ -75,7 +72,6 @@ struct Emitter: ff::ff_monode_t<bool, Task> {
     size_t N;
     int n_workers;
     size_t chunksize;
-    size_t diag = 1;
 };
 
 struct Worker: ff::ff_monode_t<Task, Task> {
