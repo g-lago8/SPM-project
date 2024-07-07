@@ -31,7 +31,7 @@ $(shell mkdir -p $(BIN_DIR))
 
 
 
-all: $(addprefix $(BIN_DIR)/,$(TARGET))
+all : $(TARGET)
 
 clean: 
 	-rm -f $(BIN_DIR)/*
