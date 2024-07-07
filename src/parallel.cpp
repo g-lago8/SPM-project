@@ -52,25 +52,19 @@ struct Emitter: ff::ff_monode_t<bool, Task>{
     Emitter(vector<vector<double>> &M, size_t N, int n_workers,  size_t chunksize = 1):M(M), N(N), n_workers(n_workers), chunksize(chunksize) {}
     size_t diag =1;
     Task* svc(bool *diagonal_is_done){
-        if(diagonal_is_done == nullptr){ // start of the stream
-            // we define diagonal_is_done as a pointer to a boolean, and set it to true to start the computation
-            diagonal_is_done = new bool;
-            *diagonal_is_done = true;
-        }
-        // if the diagonal is not done, do nothing
-        if (*diagonal_is_done == false) 
-            return GO_ON;
-        // else, send the tasks to the workers
+        
+        // send the tasks to the workers
         if( n_workers * chunksize > N - diag){
             chunksize = N / n_workers;
         }
         for(uint64_t i = 0; i< (N- diag); i += chunksize){      // for each elem. in the diagonal
             size_t block_size = min( N-diag-i, chunksize);
-            *diagonal_is_done = false;
+            if(diagonal_is_done!=nullptr){
+                *diagonal_is_done = false;
+            }
             ff_send_out(new Task{M, N, diag, i, block_size});
         }
         diag++;
-        delete diagonal_is_done;
         if (diag == N) return EOS;
         return GO_ON;
     }

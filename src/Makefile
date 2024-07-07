@@ -34,6 +34,7 @@ $(shell mkdir -p $(BIN_DIR))
 all : $(TARGET)
 
 clean: 
-	-rm -f $(BIN_DIR)/*
+	rm -f $(TARGET)
+
 cleanall: clean
-	-rm -fr $(TARGET)
+	rm -f $(BIN_DIR)/*

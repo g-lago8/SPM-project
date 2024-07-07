@@ -67,7 +67,6 @@ struct Emitter: ff::ff_monode_t<bool, Task> {
             ff_send_out(new Task{M, N, diag, i, block_size});
         }
         diag++;
-        delete diagonal_is_done;
         if(diag == N) return EOS;
         return GO_ON;
     }
