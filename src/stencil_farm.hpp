@@ -67,6 +67,7 @@ struct Emitter: ff::ff_monode_t<bool, Task> {
             ff_send_out(new Task{M, N, diag, i, block_size});
         }
         diag++;
+        delete diagonal_is_done;
         if(diag == N) return EOS;
         return GO_ON;
     }
@@ -78,22 +79,23 @@ struct Emitter: ff::ff_monode_t<bool, Task> {
     size_t diag = 1;
 };
 
-struct Worker: ff::ff_monode_t<Task, size_t> {
-    size_t* svc(Task *task) {
+struct Worker: ff::ff_monode_t<Task, Task> {
+    Task* svc(Task *task) {
         compute_stencil_one_chunk(task->M, task->N, task->diag, task->i, task->chunksize);
-        return &(task->chunksize);
+        return task;
     }
 };
 
-struct Collector: ff::ff_minode_t<size_t, bool> {
+struct Collector: ff::ff_minode_t<Task, bool> {
     Collector(size_t N): N(N) {}
 
-    bool* svc(size_t *computed) {
-        done += *computed;
+    bool* svc(Task *computed) {
+        done += computed->chunksize;
         if(done == N-diag) { // if the diagonal is all done
             done = 0;
             diag++;
             diagonal_is_done = true;
+            delete computed;
             return &diagonal_is_done; // send the signal to the emitter
         }
         return GO_ON; // else do nothing and keep going
