@@ -29,13 +29,24 @@ vector<double> calculate_mean(vector<vector<double>>& results, int n_tries, vect
 int main(int argc, char *argv[]){
     size_t N = 2048; // default size of the matrix (NxN)   
     int n_tries = 10; // default number of tries
-    if (argc >3){
-        cout << "use: " << argv[0] << " [N, n_tries]"<<endl;
-        cout << "     N: size of the square matrix\n";
+    size_t chunksize = 1; // default size of the chunk
+    if (argc >4){
+        cout << "use: " << argv[0] << " [N, n_tries, chunksize]"<<endl;
+        cout << "     N: size of the square matrix, default 2048\n";
+        cout << "     n_tries: number of tries, default 10\n";
+        cout << "     chunksize: size of the chunk, default 1\n";
+        return -1;
     }
     if (argc > 1){
         N = stol(argv[1]);
     }
+    if (argc > 2){
+        n_tries = stol(argv[2]);
+    }
+    if (argc > 3){
+        chunksize = stol(argv[3]);
+    }
+
     if (N < 1){
         cout << "Error: N must be greater than 0" << endl;
         return -1;
@@ -53,7 +64,7 @@ int main(int argc, char *argv[]){
             auto M1 = M;
             auto nw = nworkers[j];
             auto start = chrono::steady_clock::now();
-            compute_stencil_par(M1, N, nw, 1);
+            compute_stencil_par(M1, N, nw, chunksize);
             auto end = chrono::steady_clock::now();
             chrono::duration<double> elapsed_seconds = end-start;
             cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
