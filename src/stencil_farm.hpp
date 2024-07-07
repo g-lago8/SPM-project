@@ -90,13 +90,13 @@ struct Collector: ff::ff_minode_t<size_t, bool> {
 
     bool* svc(size_t *computed) {
         done += *computed;
-        if(done == N-diag) {
+        if(done == N-diag) { // if the diagonal is all done
             done = 0;
             diag++;
             diagonal_is_done = true;
+            return &diagonal_is_done; // send the signal to the emitter
         }
-        ff_send_out(&diagonal_is_done);
-        return GO_ON;
+        return GO_ON; // else do nothing and keep going
     }
 
     size_t done = 0;

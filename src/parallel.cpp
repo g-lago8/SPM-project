@@ -101,8 +101,8 @@ struct Collector: ff::ff_minode_t<size_t, bool>{
             done = 0;
             diag++;
             diagonal_is_done = true;
+            return &diagonal_is_done;
         }
-        ff_send_out(&diagonal_is_done);
         return GO_ON;
     }
 };
@@ -232,4 +232,7 @@ int main( int argc, char *argv[] ) {
     if (print_result)
         cout << "Sburreck!"<<endl;
     return 0;
+
+
 }
+
