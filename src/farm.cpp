@@ -1,4 +1,4 @@
-#include "farm.hpp"
+#include "stencil_farm.hpp"
 #include <chrono>
 #include <iostream>
 
