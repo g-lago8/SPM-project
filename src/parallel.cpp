@@ -53,7 +53,6 @@ struct Emitter: ff::ff_monode_t<bool, Task>{
     size_t diag =1;
     Task* svc(bool *diagonal_is_done){
         if(diagonal_is_done == nullptr){ // start of the stream
-
             // we define diagonal_is_done as a pointer to a boolean, and set it to true to start the computation
             diagonal_is_done = new bool;
             *diagonal_is_done = true;
@@ -71,9 +70,11 @@ struct Emitter: ff::ff_monode_t<bool, Task>{
             ff_send_out(new Task{M, N, diag, i, block_size});
         }
         diag++;
+        delete diagonal_is_done;
         if (diag == N) return EOS;
         return GO_ON;
     }
+
     vector<vector<double>> &M;
     size_t N;
     int n_workers;
@@ -81,22 +82,23 @@ struct Emitter: ff::ff_monode_t<bool, Task>{
 };
 
 
-struct Worker: ff::ff_monode_t<Task, size_t>{
-    size_t *svc(Task *task){
+struct Worker: ff::ff_monode_t<Task, Task>{
+    Task *svc(Task *task){
         compute_stencil_one_chunk(task->M, task->N, task->diag, task->i, task->chunksize);
-        return &(task -> chunksize);
+        return task;
     }
 };
 
 
-struct Collector: ff::ff_minode_t<size_t, bool>{
+struct Collector: ff::ff_minode_t<Task, bool>{
     size_t done = 0;
     size_t N;
     size_t diag = 1;
     bool diagonal_is_done=false;
     Collector(size_t N):N(N){}
-    bool *svc(size_t *computed){
-        done += *computed;
+    bool *svc(Task  *computed_task){
+        done += computed_task->chunksize;
+        delete computed_task;
         if (done == N-diag){
             done = 0;
             diag++;

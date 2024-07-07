@@ -77,7 +77,7 @@ int main(int argc, char *argv[]){
 
     // save files in a csv format
     ofstream file;
-    file.open("strong_scaling.csv");
+    file.open("../results/strong_scaling.csv");
     file << "nworkers,mean_time\n";
     for (auto i = 0; i < nworkers.size(); i++){
         file << nworkers[i] << "," << means[i] << "\n";
