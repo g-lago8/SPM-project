@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Check if the correct number of arguments is provided
-if [ "$#" -ne 5 ]; then
+if [ "$#" -ne 6 ]; then
     echo "Usage: $0 <program> <problem_size> <blocksize> <on_demand> <n_tries> <thread_list>"
     exit 1
 fi
@@ -29,6 +29,6 @@ for THREADS in "${THREAD_ARRAY[@]}"; do
     
     for ((i = 1; i <= N_TRIES; i++)); do
         echo "Iteration $i with $THREADS threads"
-        ../out/$PROGRAM $PROBLEM_SIZE $THREADS $BLOCKSIZE $ON_DEMAND 
+        ../out/strong_scaling_new $PROBLEM_SIZE $THREADS $BLOCKSIZE $ON_DEMAND 
     done
 done
