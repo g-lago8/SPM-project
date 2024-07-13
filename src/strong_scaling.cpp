@@ -48,7 +48,9 @@ int main(int argc, char *argv[]){
     if (argc > 3){
         chunksize = stol(argv[3]);
     }
-
+    if (argc > 3){
+        chunksize = bool(stol(argv[4]));
+    }
     if (N < 1){
         cout << "Error: N must be greater than 0" << endl;
         return -1;
@@ -62,7 +64,7 @@ int main(int argc, char *argv[]){
 
     vector <int> nworkers = {1, 2, 4, 6, 8, 10, 12, 16, 20, 24};
     vector<vector<double>> results (nworkers.size(), vector<double>(n_tries, 0.0));
-    for (auto j = 0; j < nworkers.size(); j++){
+    for (size_t j = 0; j < nworkers.size(); j++){
         cout << "nworkers: " << nworkers[j] << endl;
         for (auto i =0 ; i< n_tries; i++){
             M1 = M;
@@ -83,7 +85,7 @@ int main(int argc, char *argv[]){
     ofstream file;
     file.open("../results/strong_scaling.csv");
     file << "nworkers,mean_time\n";
-    for (auto i = 0; i < nworkers.size(); i++){
+    for (size_t i = 0; i < nworkers.size(); i++){
         file << nworkers[i] << "," << means[i] << "\n";
     }
     file.close();
