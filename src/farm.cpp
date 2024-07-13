@@ -3,15 +3,17 @@
 #include <iostream>
 
 int main(int argc, char *argv[]) {
-    uint64_t N = 512;    // default size of the matrix (NxN)
+    uint64_t N = 2048;    // default size of the matrix (NxN)
     int nworkers = 4;    // default number of workers
-    size_t chunksize = 1; // default size of the chunk
+    size_t chunksize = 8; // default size of the chunk
+    bool on_demand =false;
     
-    if(argc != 1 && argc != 2 && argc != 3 && argc != 4) {
+    if(argc > 5) {
         std::printf("use: %s [N, nworkers, chunksize]\n", argv[0]);
-        std::printf("     N: size of the square matrix\n");
-        std::printf("     nworkers: number of workers\n");
-        std::printf("     chunksize: size of the chunk\n");
+        std::printf("     N: size of the square matrix (default 2048)\n");
+        std::printf("     nworkers: number of workers (default 4)\n");
+        std::printf("     chunksize: size of the chunk (default 8)\n");
+        std::printf("     on_demand: whether or not to set on-demand scheduling (default false, round robin)\n");
         return -1;
     }
     if(argc > 1) {
@@ -22,6 +24,9 @@ int main(int argc, char *argv[]) {
     }
     if(argc > 3) {
         chunksize = std::stol(argv[3]);
+    }
+    if(argc >4){
+        on_demand = bool(std::stol(argv[4]));
     }
 
     if(N < 1) {
@@ -54,7 +59,7 @@ int main(int argc, char *argv[]) {
     auto M1 = M;
 
     auto start = std::chrono::steady_clock::now();
-    compute_stencil_par(M, N, nworkers, chunksize);
+    compute_stencil_par(M, N, nworkers, chunksize, on_demand);
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed_seconds = end-start;
     std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
