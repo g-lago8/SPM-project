@@ -6,6 +6,7 @@ if [ "$#" -ne 5 ]; then
     exit 1
 fi
 
+
 PROGRAM =$1
 PROBLEM_SIZE=$2
 BLOCKSIZE=$3
@@ -28,6 +29,6 @@ for THREADS in "${THREAD_ARRAY[@]}"; do
     
     for ((i = 1; i <= N_TRIES; i++)); do
         echo "Iteration $i with $THREADS threads"
-        ../out/$PPROGRAM $PROBLEM_SIZE $THREADS $BLOCKSIZE $ON_DEMAND 
+        ../out/$PROGRAM $PROBLEM_SIZE $THREADS $BLOCKSIZE $ON_DEMAND 
     done
 done
