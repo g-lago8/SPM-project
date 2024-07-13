@@ -102,7 +102,7 @@ struct Collector: ff::ff_minode_t<Task, bool> {
     bool diagonal_is_done = false;
 };
 
-void compute_stencil_par(std::vector<std::vector<double>> &M, const uint64_t &N, int nworkers, size_t chunksize) {
+void compute_stencil_par(std::vector<std::vector<double>> &M, const uint64_t &N, int nworkers, size_t chunksize, bool on_demand=true) {
     auto make_farm = [&]() {
         std::vector<std::unique_ptr<ff::ff_node>> W;
         for(auto i = 0; i < nworkers; ++i)
@@ -113,6 +113,9 @@ void compute_stencil_par(std::vector<std::vector<double>> &M, const uint64_t &N,
     Collector collector(N);
     ff::ff_Farm<> farm(std::move(make_farm()), emitter, collector);
     farm.wrap_around();
+    if(on_demand) 
+        farm.set_scheduling_ondemand();
+        
     if(farm.run_and_wait_end() < 0) {
         ff::error("running farm");
         return;

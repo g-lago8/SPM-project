@@ -30,11 +30,13 @@ int main(int argc, char *argv[]){
     size_t N = 2048; // default size of the matrix (NxN)   
     int n_tries = 10; // default number of tries
     size_t chunksize = 1; // default size of the chunk
-    if (argc >4){
+    bool on_demand =false;
+    if (argc >5){
         cout << "use: " << argv[0] << " [N, n_tries, chunksize]"<<endl;
-        cout << "     N: size of the square matrix, default 2048\n";
-        cout << "     n_tries: number of tries, default 10\n";
-        cout << "     chunksize: size of the chunk, default 1\n";
+        cout << "     N: size of the square matrix, default 2048"<<endl;
+        cout << "     n_tries: number of tries, default 10"<<endl;
+        cout << "     chunksize: size of the chunk, default 1"<<endl;
+        cout << "     on_demand: wether use on demand scheduling for the farm, default false (round-robin)"<<endl;
         return -1;
     }
     if (argc > 1){
@@ -66,7 +68,7 @@ int main(int argc, char *argv[]){
             M1 = M;
             auto nw = nworkers[j];
             auto start = chrono::steady_clock::now();
-            compute_stencil_par(M1, N, nw, chunksize);
+            compute_stencil_par(M1, N, nw, chunksize, on_demand);
             auto end = chrono::steady_clock::now();
             chrono::duration<double> elapsed_seconds = end-start;
             cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
