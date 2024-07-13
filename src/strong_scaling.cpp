@@ -62,7 +62,7 @@ int main(int argc, char *argv[]){
         M[i][i] = double(i+1)/double(N);
     }
 
-    vector <int> nworkers = {1, 2, 4, 6, 8, 10, 12, 16, 20, 24};
+    vector <int> nworkers = {1, 2, 4, 6, 8, 10, 12, 16, 20};
     vector<vector<double>> results (nworkers.size(), vector<double>(n_tries, 0.0));
     for (size_t j = 0; j < nworkers.size(); j++){
         cout << "nworkers: " << nworkers[j] << endl;
