@@ -52,6 +52,8 @@ int main(int argc, char *argv[]){
         return -1;
     }
     vector<vector<double>> M(N, vector<double>(N, 0.0));
+    vector<vector<double>> M1(N, vector<double>(N, 0.0));
+
     for (size_t i = 0; i < N; ++i){
         M[i][i] = double(i+1)/double(N);
     }
@@ -61,7 +63,7 @@ int main(int argc, char *argv[]){
     for (auto j = 0; j < nworkers.size(); j++){
         cout << "nworkers: " << nworkers[j] << endl;
         for (auto i =0 ; i< n_tries; i++){
-            auto M1 = M;
+            M1 = M;
             auto nw = nworkers[j];
             auto start = chrono::steady_clock::now();
             compute_stencil_par(M1, N, nw, chunksize);
