@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
     // write time taken, number of workers, chunksize, and N to a file
     std::ofstream file;
     file.open("../results/strong_scaling_results.txt", std::ios_base::app);
-    file << elapsed_seconds.count() << " " << nworkers << " " << chunksize << " " << N << std::endl;
+    file << elapsed_seconds.count() << " " << nworkers << " " << chunksize << " " << N << " " << int(on_demand)<< std::endl;
     file.close();
 
     return 0;
