@@ -86,11 +86,11 @@ struct Collector: ff::ff_minode_t<Task, bool> {
 
     bool* svc(Task *computed) {
         done += computed->chunksize;
+        delete computed;
         if(done == N-diag) { // if the diagonal is all done
             done = 0;
             diag++;
             diagonal_is_done = true;
-            delete computed;
             return &diagonal_is_done; // send the signal to the emitter
         }
         return GO_ON; // else do nothing and keep going
