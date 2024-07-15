@@ -1,11 +1,4 @@
-datasets
-*.o
-*.a
-*.bin
 .vscode
-Esercizio1/
-*.pdf
-*.exe
 out/
 results/images
 results/tables
