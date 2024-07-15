@@ -7,6 +7,7 @@
 #include <cassert>
 #include <chrono>
 #include<cmath>
+#include<fstream>
 
 void inline compute_stencil_one_pos(
     std::vector<std::vector<float>> &M,
@@ -65,15 +66,10 @@ int main( int argc, char *argv[] ) {
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed_seconds = end-start;
 
-    std::cout << "Elapsed time: " << elapsed_seconds.count() << "s\n";
-    // cout M
-    for (uint64_t i = 0; i < N; ++i) {
-        for (uint64_t j = 0; j < N; ++j) {
-            std::cout << M[i][j] << " ";
-        }
-        std::cout << std::endl;
-    } 
-
-    std::cout <<M[N-1][N-1] << std::endl;
+    std::cout << "Elapsed time (sequential): " << elapsed_seconds.count() << "s\n";
+    
+    std::ofstream file;
+    file.open("../results/sequential.txt");
+    file <<   elapsed_seconds.count() <<" " << N << std::endl;
     return 0;
 }
