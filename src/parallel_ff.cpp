@@ -30,6 +30,9 @@ int main(int argc, char *argv[]) {
     if(argc >4){
         on_demand = bool(std::stol(argv[4]));
     }
+    if(argc >5){
+        filename = argv[5];
+    }
 
     if(N < 1) {
         std::cout << "Error: N must be greater than 0" << std::endl;
