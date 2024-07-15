@@ -7,13 +7,15 @@ int main(int argc, char *argv[]) {
     int nworkers = 4;    // default number of workers
     size_t chunksize = 8; // default size of the chunk
     bool on_demand =false;
+    std::string filename = "strong_scaling_results.txt";
     
-    if(argc > 5) {
+    if(argc > 6) {
         std::printf("use: %s [N, nworkers, chunksize]\n", argv[0]);
         std::printf("     N: size of the square matrix (default 2048)\n");
         std::printf("     nworkers: number of workers (default 4)\n");
         std::printf("     chunksize: size of the chunk (default 8)\n");
         std::printf("     on_demand: whether or not to set on-demand scheduling (default false, round robin)\n");
+        std::printf("     filename: name of the file to write the results to (default strong_scaling_results.txt)\n");
         return -1;
     }
     if(argc > 1) {
@@ -64,7 +66,7 @@ int main(int argc, char *argv[]) {
     std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
     // write time taken, number of workers, chunksize, and N to a file
     std::ofstream file;
-    file.open("../results/strong_scaling_results.txt", std::ios_base::app);
+    file.open("../results/"+filename, std::ios_base::app);
     file << elapsed_seconds.count() << " " << nworkers << " " << chunksize << " " << N << " " << int(on_demand)<< std::endl;
     file.close();
 
