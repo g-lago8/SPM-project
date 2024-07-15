@@ -1,36 +1,30 @@
-
-
 #include <iostream>
 #include <vector>
 #include <thread>
 #include <random>
 #include <cassert>
 #include <chrono>
-#include<cmath>
-#include<fstream>
+#include <cmath>
+#include <fstream>
 
 void inline compute_stencil_one_pos(
-    std::vector<std::vector<float>> &M,
+    std::vector<double> &M,
     const uint64_t &N,
     const uint64_t &diag,
     const uint64_t &i)
 {
-    M[i][i+diag] = 0;
-    for(uint64_t j =0; j<diag; ++j)
-        M[i][i+diag] += M[i][i+j]*M[i+diag -j][i+diag];
+    M[i*N + i+diag] = 0;
+    for(uint64_t j = 0; j < diag; ++j)
+        M[i*N + i+diag] += M[i*N + i+j] * M[(i+diag-j)*N + i+diag];
 
-    M[i][i+diag] = std::cbrt(M[i][i+diag]);
+    M[i*N + i+diag] = std::cbrt(M[i*N + i+diag]);
 }
 
-void compute_stencil(std::vector<std::vector<float>> &M, const uint64_t &N) {
-    
-    for(uint64_t diag = 1; diag< N; ++diag)        // for each upper diagonal
-        for(uint64_t i = 0; i< (N-diag); ++i)      // for each elem. in the diagonal
+void compute_stencil(std::vector<double> &M, const uint64_t &N) {
+    for(uint64_t diag = 1; diag < N; ++diag)        // for each upper diagonal
+        for(uint64_t i = 0; i < (N-diag); ++i)      // for each elem. in the diagonal
             compute_stencil_one_pos(M, N, diag, i);  
-    
 }
-
-
 
 int main( int argc, char *argv[] ) {
     uint64_t N = 512;    // default size of the matrix (NxN)
@@ -44,20 +38,18 @@ int main( int argc, char *argv[] ) {
         N = std::stol(argv[1]);
     }
 
+    // allocate the matrix
+    std::vector<double> M(N*N, 0.0);
 
-	// allocate the matrix
-	std::vector<std::vector<float>> M(N, std::vector<float>(N, 0.0));
-
-    //init
-
+    // init
     for (uint64_t i = 0; i < N; ++i) {
         for (uint64_t j = 0; j < N; ++j) {
-            M[i][j] = 0;
+            M[i*N + j] = 0;
         }
     }
 
     for (uint64_t i = 0; i < N; ++i) {
-        M[i][i] = (float(i+1))/N;
+        M[i*N + i] = (double(i+1))/double(N);
     }
 
     // compute stencil
@@ -70,6 +62,6 @@ int main( int argc, char *argv[] ) {
     
     std::ofstream file;
     file.open("../results/sequential.txt");
-    file <<   elapsed_seconds.count() <<" " << N << std::endl;
+    file << elapsed_seconds.count() << " " << N << std::endl;
     return 0;
 }

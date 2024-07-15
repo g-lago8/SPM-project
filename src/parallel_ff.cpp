@@ -51,16 +51,13 @@ int main(int argc, char *argv[]) {
         chunksize = size_t(N/nworkers);
     }
 
-    std::vector<std::vector<double>> M(N, std::vector<double>(N, 0.0));
+    std::vector<double> M(N * N, 0.0);
 
+    // Setting diagonal elements
     for(uint64_t i = 0; i < N; ++i) {
-        for(uint64_t j = 0; j < N; ++j) {
-            M[i][j] = 0;
-        }
+        M[i*N + i] = double(i+1)/double(N);
     }
-    for(uint64_t i = 0; i < N; ++i) {
-        M[i][i] = double(i+1)/double(N);
-    }
+
 
     auto start = std::chrono::steady_clock::now();
     compute_stencil_par(M, N, nworkers, chunksize, on_demand);

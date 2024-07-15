@@ -46,16 +46,13 @@ int main(int argc, char *argv[]) {
         chunksize = size_t(N/nworkers);
     }
 
-    std::vector<std::vector<double>> M(N, std::vector<double>(N, 0.0));
+    std::vector<double> M(N * N, 0.0);
 
+    // Setting diagonal elements
     for(uint64_t i = 0; i < N; ++i) {
-        for(uint64_t j = 0; j < N; ++j) {
-            M[i][j] = 0;
-        }
+        M[i*N + i] = double(i+1)/double(N);
     }
-    for(uint64_t i = 0; i < N; ++i) {
-        M[i][i] = double(i+1)/double(N);
-    }
+
     auto M1 = M;
 
     auto start = std::chrono::steady_clock::now();
@@ -75,13 +72,13 @@ int main(int argc, char *argv[]) {
     if(N < 11) {
         for(uint64_t i = 0; i < N; ++i) {
             for(uint64_t j = 0; j < N; ++j) {
-                std::cout << M[i][j] << " ";
+                std::cout << M[i * N + j] << " ";
             }
             std::cout << std::endl;
         }
         for(uint64_t i = 0; i < N; ++i) {
             for(uint64_t j = 0; j < N; ++j) {
-                std::cout << M1[i][j] << " ";
+                std::cout << M1[i * N + j] << " ";
             }
             std::cout << std::endl;
         }
@@ -89,9 +86,9 @@ int main(int argc, char *argv[]) {
 
     for(uint64_t i = 0; i < N; ++i) {
         for(uint64_t j = 0; j < N; ++j) {
-            if(std::abs(M[i][j] - M1[i][j]) > 1e-7) {
-                std::cout << "Error: M[" << i << "][" << j << "] = " << M[i][j] << " != " << M1[i][j] << std::endl;
-                std::cout << "Difference: " << std::abs(M[i][j] - M1[i][j]) << std::endl;
+            if(std::abs(M[i * N + j] - M1[i * N + j]) > 1e-7) {
+                std::cout << "Error: M[" << i << "][" << j << "] = " << M[i * N + j] << " != " << M1[i * N + j] << std::endl;
+                std::cout << "Difference: " << std::abs(M[i * N + j] - M1[i * N + j]) << std::endl;
                 return -1;
             }
         }
