@@ -26,11 +26,12 @@ void inline compute_stencil_one_chunk(
     size_t end = std::min(i + chunksize, N-diag);
     for(; i < end; ++i) {
         double temp = 0;
+        auto i_plus_diag = i + diag; 
         for(uint64_t j = 0; j < diag; ++j) {
-            temp += M[i][i+j] * M[i+diag-j][i+diag];
+            temp += M[i][i+j] * M[i_plus_diag -j][i_plus_diag];
         }
-        M[i][i+diag] = temp;
-        M[i][i+diag] = std::cbrt(M[i][i+diag]);
+        M[i][i_plus_diag] = temp;
+        M[i][i_plus_diag] = std::cbrt(M[i][i_plus_diag]);
     }
 }
 
