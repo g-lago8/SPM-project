@@ -27,11 +27,17 @@ void inline compute_stencil_one_chunk(
     for(; i < end; ++i) {
         double temp = 0;
         auto i_plus_diag = i + diag; 
+        // auto i_plus_diag_plus_1 = i_plus_diag + 1;
         for(uint64_t j = 0; j < diag; ++j) {
-            temp += M[i][i+j] * M[i_plus_diag -j][i_plus_diag];
+            temp += M[i][i+j] * M[i_plus_diag][i_plus_diag - j];
         }
-        M[i][i_plus_diag] = temp;
-        M[i][i_plus_diag] = std::cbrt(M[i][i_plus_diag]);
+
+        // we store the result in the lower triangle, to do a dot product over two rows, 
+        //instead of a dot product between a row and a column (better cache locality)
+        M[i_plus_diag][i] =temp; 
+        M[i_plus_diag][i] = std::cbrt(M[i_plus_diag][i]); // cube root
+        M[i][i_plus_diag] = M[i_plus_diag][i]; // store the result also in the upper triangle
+
     }
 }
 
