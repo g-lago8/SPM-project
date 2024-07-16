@@ -49,11 +49,6 @@ int main(int argc, char *argv[]) {
     std::vector<std::vector<double>> M(N, std::vector<double>(N, 0.0));
 
     for(uint64_t i = 0; i < N; ++i) {
-        for(uint64_t j = 0; j < N; ++j) {
-            M[i][j] = 0;
-        }
-    }
-    for(uint64_t i = 0; i < N; ++i) {
         M[i][i] = double(i+1)/double(N);
     }
     auto M1 = M;
