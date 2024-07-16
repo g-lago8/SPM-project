@@ -47,8 +47,9 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     if(chunksize * nworkers > N) {
-        std::cout << "Warning: chunksize * nworkers must be less than N, defaulting to N/nworkers" << std::endl;
         chunksize = size_t(N/nworkers);
+
+        std::cout << "Warning: chunksize * nworkers must be less than N, defaulting to N/nworkers = "<< chunksize << std::endl;
     }
 
     std::vector<std::vector<double>> M(N, std::vector<double>(N, 0.0));

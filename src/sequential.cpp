@@ -33,11 +33,11 @@ void compute_stencil(std::vector<std::vector<float>> &M, const uint64_t &N) {
 
 
 int main( int argc, char *argv[] ) {
-    uint64_t N = 512;    // default size of the matrix (NxN)
+    uint64_t N = 2048;    // default size of the matrix (NxN)
     
     if (argc != 1 && argc != 2) {
         std::printf("use: %s N\n", argv[0]);
-        std::printf("     N size of the square matrix\n");
+        std::printf("     N size of the square matrix (default 2048)\n");
         return -1;
     }
     if (argc > 1) {
