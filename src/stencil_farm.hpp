@@ -135,9 +135,6 @@ struct Emitter: ff::ff_monode_t<bool, Task>{
         return GO_ON;
     }
 
-    void svc_end() {
-        std::cout << "Total time taken (Emitter): " << total_time << " seconds" << std::endl;
-    }
 
     std::vector<std::vector<double>> &M;
     size_t N;
@@ -146,8 +143,12 @@ struct Emitter: ff::ff_monode_t<bool, Task>{
 };
 
 struct Worker: ff::ff_monode_t<Task, Task> {
+    double total_time=0.0;
     Task* svc(Task *task) {
+        auto start = std::chrono::high_resolution_clock::now();
         compute_stencil_one_chunk(task->M, task->N, task->diag, task->i, task->chunksize);
+        auto end = std::chrono::high_resolution_clock::now();
+        total_time += std::chrono::duration<double>(end-start).count();
         return task;
     }
 };
@@ -175,9 +176,6 @@ struct Collector: ff::ff_minode_t<Task, bool> {
         return GO_ON; // else do nothing and keep going
     }
 
-    void svc_end() {
-        std::cout << "Total time taken (Collector): " << total_time << " seconds" << std::endl;
-    }
 
     size_t done = 0;
     size_t N;
@@ -204,6 +202,14 @@ void compute_stencil_par(std::vector<std::vector<double>> &M, const uint64_t &N,
         ff::error("running farm");
         return;
     }
+
+    std::cout << "Total time (collector): " << collector.total_time << std::endl;
+    std::cout << "Total time (emitter): " << emitter.total_time << std::endl;
+    // print the time of each worker
+    for(auto i = 0; i < nworkers; ++i) {
+        std::cout << "Total time (worker " << i << "): " << static_cast<Worker*>(farm.getWorker(i))->total_time << std::endl;
+    }
+
 }
 
 #endif // STENCIL_HPP
