@@ -107,12 +107,15 @@ void inline compute_stencil_one_chunk(
 }
 
 struct Emitter: ff::ff_monode_t<bool, Task>{
-    Emitter(std::vector<std::vector<double>> &M, size_t N, int n_workers,  size_t chunksize = 1):M(M), N(N), n_workers(n_workers), chunksize(chunksize) {}
+    Emitter(std::vector<std::vector<double>> &M, size_t N, int n_workers,  size_t chunksize = 1):M(M), N(N), n_workers(n_workers), chunksize(chunksize) {
+        total_time = 0.0;
+    }
     size_t diag =1;
+    double total_time;
+
     Task* svc(bool *diagonal_is_done){
-        
+        auto start = std::chrono::high_resolution_clock::now();
         // send the tasks to the workers
-     
         if( n_workers * chunksize > N - diag){
             chunksize = N / n_workers;
         }
@@ -126,9 +129,16 @@ struct Emitter: ff::ff_monode_t<bool, Task>{
             ff_send_out(new Task{M, N, diag, row, block_size});
         }
         diag++;
+        auto end = std::chrono::high_resolution_clock::now();
+        total_time += std::chrono::duration<double>(end-start).count();
         if (diag == N) return EOS;
         return GO_ON;
     }
+
+    void svc_end() {
+        std::cout << "Total time taken (Emitter): " << total_time << " seconds" << std::endl;
+    }
+
     std::vector<std::vector<double>> &M;
     size_t N;
     int n_workers;
@@ -143,18 +153,30 @@ struct Worker: ff::ff_monode_t<Task, Task> {
 };
 
 struct Collector: ff::ff_minode_t<Task, bool> {
-    Collector(size_t N): N(N) {}
+    double total_time;
+
+    Collector(size_t N): N(N) {total_time = 0.0;}
 
     bool* svc(Task *computed) {
+        auto start = std::chrono::high_resolution_clock::now();
         done += computed->chunksize;
         delete computed;
         if(done == N-diag) { // if the diagonal is all done
             done = 0;
             diag++;
             diagonal_is_done = true;
+            auto end = std::chrono::high_resolution_clock::now();
+            total_time += std::chrono::duration<double>(end-start).count();
             return &diagonal_is_done; // send the signal to the emitter
+
         }
+        auto end = std::chrono::high_resolution_clock::now();
+        total_time += std::chrono::duration<double>(end-start).count();
         return GO_ON; // else do nothing and keep going
+    }
+
+    void svc_end() {
+        std::cout << "Total time taken (Collector): " << total_time << " seconds" << std::endl;
     }
 
     size_t done = 0;
