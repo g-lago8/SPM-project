@@ -7,6 +7,7 @@
 #include <ff/ff.hpp>
 #include <ff/farm.hpp>
 #include <ff/utils.hpp>
+#include <chrono>
 
 
 void inline compute_stencil_naive(std::vector<std::vector<double>> &M, const uint64_t &N) {
@@ -107,14 +108,11 @@ void inline compute_stencil_one_chunk(
 }
 
 struct Emitter: ff::ff_monode_t<bool, Task>{
-    Emitter(std::vector<std::vector<double>> &M, size_t N, int n_workers,  size_t chunksize = 1):M(M), N(N), n_workers(n_workers), chunksize(chunksize) {
-        total_time = 0.0;
-    }
+    Emitter(std::vector<std::vector<double>> &M, size_t N, int n_workers,  size_t chunksize = 1):M(M), N(N), n_workers(n_workers), chunksize(chunksize) {}
     size_t diag =1;
     double total_time;
 
     Task* svc(bool *diagonal_is_done){
-        auto start = std::chrono::high_resolution_clock::now();
         // send the tasks to the workers
         if( n_workers * chunksize > N - diag){
             chunksize = N / n_workers;
@@ -129,8 +127,6 @@ struct Emitter: ff::ff_monode_t<bool, Task>{
             ff_send_out(new Task{M, N, diag, row, block_size});
         }
         diag++;
-        auto end = std::chrono::high_resolution_clock::now();
-        total_time += std::chrono::duration<double>(end-start).count();
         if (diag == N) return EOS;
         return GO_ON;
     }
@@ -143,36 +139,26 @@ struct Emitter: ff::ff_monode_t<bool, Task>{
 };
 
 struct Worker: ff::ff_monode_t<Task, Task> {
-    double total_time=0.0;
     Task* svc(Task *task) {
-        auto start = std::chrono::high_resolution_clock::now();
         compute_stencil_one_chunk(task->M, task->N, task->diag, task->i, task->chunksize);
-        auto end = std::chrono::high_resolution_clock::now();
-        total_time += std::chrono::duration<double>(end-start).count();
-        return task;
+        ff_send_out( task);
+        ff_send_out (GO_ON);
+        return GO_ON;
     }
 };
 
 struct Collector: ff::ff_minode_t<Task, bool> {
-    double total_time;
-
-    Collector(size_t N): N(N) {total_time = 0.0;}
-
+    Collector(size_t N): N(N) {}
     bool* svc(Task *computed) {
-        auto start = std::chrono::high_resolution_clock::now();
         done += computed->chunksize;
         delete computed;
         if(done == N-diag) { // if the diagonal is all done
             done = 0;
             diag++;
             diagonal_is_done = true;
-            auto end = std::chrono::high_resolution_clock::now();
-            total_time += std::chrono::duration<double>(end-start).count();
             return &diagonal_is_done; // send the signal to the emitter
 
         }
-        auto end = std::chrono::high_resolution_clock::now();
-        total_time += std::chrono::duration<double>(end-start).count();
         return GO_ON; // else do nothing and keep going
     }
 
@@ -202,16 +188,6 @@ void compute_stencil_par(std::vector<std::vector<double>> &M, const uint64_t &N,
         ff::error("running farm");
         return;
     }
-
-    std::cout << "Total time (collector): " << collector.total_time << std::endl;
-    std::cout << "Total time (emitter): " << emitter.total_time << std::endl;
-    // print the time of each worker
-    auto workers = farm.getWorkers();
-    for(auto i = 0; i < workers.size(); ++i) {
-        auto worker = dynamic_cast<Worker*>(workers[i].get());
-        std::cout << "Worker " << i << " time: " << worker->total_time << std::endl;
-    }
-
 }
 
 #endif // STENCIL_HPP
