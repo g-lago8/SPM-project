@@ -28,7 +28,7 @@ int main( int argc, char *argv[] ) {
 
 
 	// allocate the matrix
-	std::vector<std::vector<float>> M(N, std::vector<float>(N, 0.0));
+	std::vector<std::vector<double>> M(N, std::vector<double>(N, 0.0));
 
     //init
 
@@ -39,7 +39,7 @@ int main( int argc, char *argv[] ) {
     }
 
     for (uint64_t i = 0; i < N; ++i) {
-        M[i][i] = (float(i+1))/N;
+        M[i][i] = (double(i+1))/double(N);
     }
 
     // compute stencil
