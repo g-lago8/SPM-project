@@ -8,27 +8,9 @@
 #include <chrono>
 #include<cmath>
 #include<fstream>
+#include "stencil_farm.hpp"
 
-void inline compute_stencil_one_pos(
-    std::vector<std::vector<float>> &M,
-    const uint64_t &N,
-    const uint64_t &diag,
-    const uint64_t &i)
-{
-    M[i][i+diag] = 0;
-    for(uint64_t j =0; j<diag; ++j)
-        M[i][i+diag] += M[i][i+j]*M[i+diag -j][i+diag];
 
-    M[i][i+diag] = std::cbrt(M[i][i+diag]);
-}
-
-void compute_stencil(std::vector<std::vector<float>> &M, const uint64_t &N) {
-    
-    for(uint64_t diag = 1; diag< N; ++diag)        // for each upper diagonal
-        for(uint64_t i = 0; i< (N-diag); ++i)      // for each elem. in the diagonal
-            compute_stencil_one_pos(M, N, diag, i);  
-    
-}
 
 
 
@@ -62,7 +44,7 @@ int main( int argc, char *argv[] ) {
 
     // compute stencil
     auto start = std::chrono::steady_clock::now();
-    compute_stencil(M, N);
+    compute_stencil_optim(M, N);
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed_seconds = end-start;
 
