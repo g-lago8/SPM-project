@@ -50,8 +50,16 @@ int main( int argc, char *argv[] ) {
 
     std::cout << "Elapsed time (sequential): " << elapsed_seconds.count() << "s\n";
     
-    std::ofstream file;
-    file.open("../results/sequential.txt");
-    file <<   elapsed_seconds.count() <<" " << N << std::endl;
+    // write the result to a file, append
+    std::ofstream file("result.txt", std::ios::app);
+    if (file.is_open()) {
+        file << N << " " << elapsed_seconds.count() << "\n";
+        file.close();
+    } else {
+        std::cout << "Unable to open file\n";
+    }
+
     return 0;
+
+
 }
