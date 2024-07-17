@@ -206,8 +206,10 @@ void compute_stencil_par(std::vector<std::vector<double>> &M, const uint64_t &N,
     std::cout << "Total time (collector): " << collector.total_time << std::endl;
     std::cout << "Total time (emitter): " << emitter.total_time << std::endl;
     // print the time of each worker
-    for(auto i = 0; i < nworkers; ++i) {
-        std::cout << "Total time (worker " << i << "): " << static_cast<Worker*>(farm.getWorker(i))->total_time << std::endl;
+    auto workers = farm.getWorkers();
+    for(auto i = 0; i < workers.size(); ++i) {
+        auto worker = dynamic_cast<Worker*>(workers[i].get());
+        std::cout << "Worker " << i << " time: " << worker->total_time << std::endl;
     }
 
 }
