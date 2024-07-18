@@ -122,7 +122,10 @@ struct Emitter: ff::ff_monode_t<bool, Task>{
         
         for(uint64_t row = 0; row< (N- diag); row += chunksize){      // for each elem. in the diagonal
             size_t block_size = std::min( N-diag-row, chunksize); // the last chunk might be smaller
-            ff_send_out(new Task{ diag, row, block_size});
+            Task *task = new Task{diag, row, block_size};
+            // print the size of task in bytes
+            //std::cout << "Task size: " << sizeof(*task) << " bytes" << std::endl;
+            ff_send_out(task);
         }
         diag++;
         if (diag == N) return EOS;
@@ -136,7 +139,7 @@ struct Emitter: ff::ff_monode_t<bool, Task>{
     size_t chunksize;
 };
 
-struct Worker: ff::ff_monode_t<Task, Task> {
+struct Worker: ff::ff_node_t<Task, Task> {
     std::vector<std::vector<double>> &M;
     size_t N;
     Worker(std::vector<std::vector<double>> &M, size_t N): M(M), N(N) {}
@@ -182,7 +185,8 @@ void compute_stencil_par(std::vector<std::vector<double>> &M, const uint64_t &N,
     farm.wrap_around();
     if(on_demand) 
         farm.set_scheduling_ondemand();
-        
+
+      
     if(farm.run_and_wait_end() < 0) {
         ff::error("running farm");
         return;
