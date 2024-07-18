@@ -74,10 +74,8 @@ void inline compute_stencil_optim(std::vector<std::vector<double>> &M, const uin
 // ---------------------- FARM IMPLEMENTATION -----------------------
 // ------------------------------------------------------------------
 struct Task {
-    std::vector <std::vector<double>> &M;
-    size_t N;
     size_t diag;
-    size_t i;
+    size_t row;
     size_t chunksize;
 };
 
@@ -87,22 +85,22 @@ void inline compute_stencil_one_chunk(
     std::vector<std::vector<double>> &M,
     const uint64_t &N,
     const uint64_t &diag,
-    uint64_t &i,
+    uint64_t &row,
     const uint64_t &chunksize) 
 {
-    size_t end = std::min(i + chunksize, N-diag);
-    for(; i < end; ++i) {
+    size_t end = std::min(row + chunksize, N-diag);
+    for(; row < end; ++row) {
         double temp = 0;
-        auto i_plus_diag = i + diag; 
+        auto col = row + diag; 
         for(uint64_t j = 0; j < diag; ++j) {
-            temp += M[i][i+j] * M[i_plus_diag][i_plus_diag - j];
+            temp += M[row][row+j] * M[col][col-j]; // dot product. 
         }
 
         // we store the result in the lower triangle, to do a dot product over two rows, 
         //instead of a dot product between a row and a column (better cache locality)
-        M[i_plus_diag][i] =temp; 
-        M[i_plus_diag][i] = std::cbrt(M[i_plus_diag][i]); // cube root
-        M[i][i_plus_diag] = M[i_plus_diag][i]; // store the result also in the upper triangle
+        M[col][row] =temp; 
+        M[col][row] = std::cbrt(M[col][row]); // cube root
+        M[row][col] = M[col][row]; // store the result also in the upper triangle
 
     }
 }
@@ -115,16 +113,16 @@ struct Emitter: ff::ff_monode_t<bool, Task>{
     Task* svc(bool *diagonal_is_done){
         // send the tasks to the workers
         if( n_workers * chunksize > N - diag){
-            chunksize = N / n_workers;
+            chunksize = N / n_workers; // if the chunksize is too big, we reduce it
         }
 
         if(diagonal_is_done!=nullptr){
-            *diagonal_is_done = false;
+            *diagonal_is_done = false; // reset the signal received by the collector
         }
         
         for(uint64_t row = 0; row< (N- diag); row += chunksize){      // for each elem. in the diagonal
-            size_t block_size = std::min( N-diag-row, chunksize);
-            ff_send_out(new Task{M, N, diag, row, block_size});
+            size_t block_size = std::min( N-diag-row, chunksize); // the last chunk might be smaller
+            ff_send_out(new Task{ diag, row, block_size});
         }
         diag++;
         if (diag == N) return EOS;
@@ -139,18 +137,19 @@ struct Emitter: ff::ff_monode_t<bool, Task>{
 };
 
 struct Worker: ff::ff_monode_t<Task, Task> {
+    std::vector<std::vector<double>> &M;
+    size_t N;
+    Worker(): M(M), N(N) {}
     Task* svc(Task *task) {
-        compute_stencil_one_chunk(task->M, task->N, task->diag, task->i, task->chunksize);
-        ff_send_out( task);
-        ff_send_out (GO_ON);
-        return GO_ON;
+        compute_stencil_one_chunk(M, N, task->diag, task->row, task->chunksize);
+        return task;
     }
 };
 
 struct Collector: ff::ff_minode_t<Task, bool> {
     Collector(size_t N): N(N) {}
     bool* svc(Task *computed) {
-        done += computed->chunksize;
+        done += computed->chunksize; // update the number of elements computed
         delete computed;
         if(done == N-diag) { // if the diagonal is all done
             done = 0;
@@ -174,7 +173,7 @@ void compute_stencil_par(std::vector<std::vector<double>> &M, const uint64_t &N,
     auto make_farm = [&]() {
         std::vector<std::unique_ptr<ff::ff_node>> W;
         for(auto i = 0; i < nworkers; ++i)
-            W.push_back(std::make_unique<Worker>());
+            W.push_back(std::make_unique<Worker>(M, N));
         return W;
     };
     Emitter emitter(M, N, nworkers, chunksize);
