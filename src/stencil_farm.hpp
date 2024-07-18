@@ -139,7 +139,7 @@ struct Emitter: ff::ff_monode_t<bool, Task>{
 struct Worker: ff::ff_monode_t<Task, Task> {
     std::vector<std::vector<double>> &M;
     size_t N;
-    Worker(): M(M), N(N) {}
+    Worker(std::vector<std::vector<double>> &M, size_t N): M(M), N(N) {}
     Task* svc(Task *task) {
         compute_stencil_one_chunk(M, N, task->diag, task->row, task->chunksize);
         return task;
