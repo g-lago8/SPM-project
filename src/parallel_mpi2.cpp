@@ -95,14 +95,32 @@ int main(int argc, char *argv[]){
     MPI_Init(&argc, &argv);
 
     int rank, size;
+
+    // argument check
+    if (argc != 2) {
+        cout << "Usage: " << argv[0] << " N" << endl;
+        return 1;
+    }
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    size_t N = 7;
+    if (size < 2) {
+        // abort if there is only one process
+        cout << "This program is meant to be run with at least 2 processes" << endl;
+        MPI_Finalize();
+        return 1;
+    }
+    
+    size_t N = atoi(argv[1]);
     vector<vector<double>> M(N, vector<double>(N, -1));
     auto se = compute_start_end(rank, size, N);
 
     for (size_t row = se.start; row <= se.end; row++) {
         M[row][row] = double(row +1)/N;
+    }
+
+    if (rank == 0){
+        print_matrix(M);
+        cout << endl;
     }
 
     vector <double> row_to_send(N, -1);
@@ -174,7 +192,7 @@ int main(int argc, char *argv[]){
             temp = cbrt(temp);
             M[end_row][end_col] = temp;
         }
-        if (rank == 2){
+        if (rank == 0){
             print_matrix(M);
             cout << endl;
         }
