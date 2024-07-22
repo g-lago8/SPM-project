@@ -5,7 +5,8 @@
 #include <iomanip>
 #include <cmath>
 #include <chrono>
-#include <unistd.h> // Add this line to include the sleep function
+#include <unistd.h> 
+
 using namespace std;
 
 void print_matrix(vector<vector<double>> &M){
@@ -61,12 +62,9 @@ void check_first(
         MPI_Irecv(row_to_receive.data(), N, MPI_DOUBLE, rank-1, 0, MPI_COMM_WORLD, &requests[1]);
     }
     else{
-        cout << "rank " << rank <<" sending " ;
         for (auto i{0}; i <diag; i++ ){
             col_to_send[i] = M[se.start + i ][se.start+diag - 1];
-             cout << col_to_send[i] << " ";
         }
-        cout << endl;
         MPI_Isend(col_to_send.data(), N, MPI_DOUBLE, rank -1, 0, MPI_COMM_WORLD, &requests[1]);
     }
 }
@@ -85,8 +83,7 @@ void check_last(
     if (M[se.end +1][se.end + diag] < 0){
         *need_col =true;
         MPI_Irecv(col_to_receive.data(), N, MPI_DOUBLE, rank +1, 0, MPI_COMM_WORLD, &requests[0]) ;
-    }
-    else{
+    } else{
         for (auto i{0}; i<diag;i++){
             row_to_send[i] = M[se.end + 1][se.end + i + 1];
         }
@@ -105,7 +102,7 @@ int main(int argc, char *argv[]){
     auto se = compute_start_end(rank, size, N);
 
     for (size_t row = se.start; row <= se.end; row++) {
-        M[row][row] = double(row +1 )/N;
+        M[row][row] = double(row +1)/N;
     }
 
     vector <double> row_to_send(N, -1);
@@ -118,17 +115,13 @@ int main(int argc, char *argv[]){
         requests[i] = MPI_REQUEST_NULL;
     }   
     MPI_Request req;
-    bool need_row, need_col = false; // these get set to true when in the two if, the operation is a receive. 
-
-
-    // -------------- MAIN LOOP -----------------------------------------------------------------------------------
-    // 
-    // ------------------------------------------------------------------------------------------------------------
+    bool need_row = false;
+    bool need_col = false; // these get set to true when in the two if, the operation is a receive.
 
     for (size_t diag = 1; diag < N - 1; diag ++){
         se = compute_start_end(rank, size, N - diag); // compute first and last element to be processed by this process
-        auto n_active_processes = min(size,int( N - diag )); // number of active processes (typically = size, but can be less for the last few iterations
-        
+        auto n_active_processes = min(size,int( N - diag ) + 1); // number of active processes (typically = size, but can be less for the last few iterations
+        if (rank == 2) cout << "n. active processes " << n_active_processes << endl;    
         // first process does not need to check first
         if (rank == 0){
             if (n_active_processes > 1){
@@ -136,11 +129,10 @@ int main(int argc, char *argv[]){
             }
         }
 
-        // last process does not need to check last
-        if (rank == n_active_processes -1){
-            if (n_active_processes > 1){
-                check_first(se, diag, N, M, rank, requests, &need_row, col_to_send, row_to_receive); // check if we need the first row, or we need to give the first column from/to the previous process
-            }
+        // last process does not need to check last, moreover, the first process that does not do computation needs to check first
+        if ( rank == n_active_processes -1){
+            if (rank ==2) cout << "rank " << rank << "checking " << se.start << " " << se.start+diag - 1 << " = " << M[se.start][se.start+diag - 1] << endl;
+            check_first(se, diag, N, M, rank, requests, &need_row, col_to_send, row_to_receive); // check if we need the first row, or we need to give the first column from/to the previous process
         }
 
         // all other processes need to check both
@@ -151,15 +143,12 @@ int main(int argc, char *argv[]){
         compute_internal_part(se, diag, M, N); // compute the element in the middle of the chunk -> surely no dependencies
  
 
-        if ( rank < n_active_processes){ // for each active process, compute the first and last element
-            
+        if ( rank < n_active_processes && rank < N -diag ){ // for each active process, compute the first and last element
             double temp = 0;
             size_t start_row =se.start;
             auto start_col = start_row + diag;
             if (need_row){ 
-                cout << "request row "<< &requests[1] << " from " << rank << endl;
                 MPI_Wait(&requests[1], MPI_STATUS_IGNORE); // wait for the row to be received
-                cout << "rank " << rank << " received the row" << endl;
                 for (size_t j =0; j <diag; j ++)
                     M[start_row][start_row + j] = row_to_receive[j]; // update the row
             }
@@ -169,27 +158,21 @@ int main(int argc, char *argv[]){
             temp = cbrt(temp);
             M[start_row][start_col] = temp;
 
-            cout <<"diag " << diag << " rank " << rank << " computed the first element" << "(" << start_row << "," << start_col << ")" << endl;
             // compute the last element
             auto end_row = se.end;
             auto end_col = end_row + diag;
             temp=0;
             if (need_col){
-                cout << "request col "<< &requests[0] << " from " << rank << endl;   
                 MPI_Wait(&requests[0], MPI_STATUS_IGNORE); // wait for the column to be received
-                cout << "rank " << rank << " received the column" << endl;
                 for (auto j = 0; j<diag; j ++ ){
-                    cout << col_to_receive[j] << " ";
                     M[end_row +j +1][end_col] = col_to_receive[j]; // update the column
                 }
-                cout << endl;
             }
             for (size_t j = 0; j < diag; j++) {
                 temp += M[end_row][end_row + j] * M[end_col - j][end_col]; // compute the element
             }
             temp = cbrt(temp);
             M[end_row][end_col] = temp;
-            cout << "diag " << diag << " rank " << rank << " computed the last element" << "(" << end_row << "," << end_col << ")" << endl;
         }
         if (rank == 2){
             print_matrix(M);
