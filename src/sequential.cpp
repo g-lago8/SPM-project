@@ -9,10 +9,18 @@
 #include<cmath>
 #include<fstream>
 #include "stencil_farm.hpp"
+#include <iomanip>
 
 
-
-
+void print_matrix(std::vector<std::vector<double>> &M){
+    for (size_t i = 0; i < M.size(); i++){
+        for (size_t j = 0; j < M.size(); j++){
+            // cout << M[i][j] << " "; with 2 decimal points
+            std::cout << std::fixed << std::setprecision(2) << M[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+}
 
 int main( int argc, char *argv[] ) {
     uint64_t N = 2048;    // default size of the matrix (NxN)
@@ -57,6 +65,9 @@ int main( int argc, char *argv[] ) {
         file.close();
     } else {
         std::cout << "Unable to open file\n";
+    }
+    if (N < 10) {
+        print_matrix(M);
     }
 
     return 0;
