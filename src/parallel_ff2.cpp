@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
     uint64_t N = 2048;    // default size of the matrix (NxN)
     int nworkers = 4;    // default number of workers
     size_t chunksize = 8; // default size of the chunk
-    std::string filename = "strong_scaling_results.txt";
+    std::string filename = "strong_scaling_results2.txt";
     
     if(argc > 4) {
         std::printf("use: %s [N, nworkers]\n", argv[0]);
