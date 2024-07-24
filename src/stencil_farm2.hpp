@@ -104,7 +104,7 @@ struct Collector: ff::ff_minode_t<int, bool> {
         }
         return GO_ON; // else do nothing and keep going
     }
-    size_t done = 0;
+    int done = 0;
     size_t N;
     size_t diag = 1;
     bool diagonal_is_done = false;
