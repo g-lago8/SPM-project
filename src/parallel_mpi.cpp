@@ -39,9 +39,10 @@ void compute_internal_part(start_end se, size_t diag, vector<vector<double>> &M,
         auto col = row + diag;
         double temp = 0;
         for (size_t j = 0; j < diag; j++) {
-            temp += M[row][row + j] * M[col - j][col];
+            temp += M[row][row + j] * M[col][col -j];
         }
         temp = cbrt(temp);
+        M[col][row] = temp;
         M[row][col] = temp;
     }
 }
@@ -132,7 +133,6 @@ int main(int argc, char *argv[]){
     for (size_t i = 0; i < 2; i++){
         requests[i] = MPI_REQUEST_NULL;
     }   
-    MPI_Request req;
     bool need_row = false;
     bool need_col = false; // these get set to true when in the two if, the operation is a receive.
 
@@ -166,14 +166,17 @@ int main(int argc, char *argv[]){
             auto start_col = start_row + diag;
             if (need_row){ 
                 MPI_Wait(&requests[1], MPI_STATUS_IGNORE); // wait for the row to be received
-                for (size_t j =0; j <diag; j ++)
+                for (size_t j =0; j <diag; j ++){
                     M[start_row][start_row + j] = row_to_receive[j]; // update the row
+                    M[start_row + j][start_row] = row_to_receive[j]; // update the column simmetrically
+                }
             }
             for (size_t j = 0; j < diag; j++) {
-                temp += M[start_row][start_row + j] * M[start_col - j][start_col]; // compute the element
+                temp += M[start_row][start_row + j] * M[start_col][start_col - j]; // compute the element
             }
             temp = cbrt(temp);
             M[start_row][start_col] = temp;
+            M[start_col][start_row] = temp;
 
             // compute the last element
             auto end_row = se.end;
@@ -181,15 +184,18 @@ int main(int argc, char *argv[]){
             temp=0;
             if (need_col){
                 MPI_Wait(&requests[0], MPI_STATUS_IGNORE); // wait for the column to be received
-                for (auto j = 0; j<diag; j ++ ){
+                for (size_t j = 0; j<diag; j ++ ){
                     M[end_row +j +1][end_col] = col_to_receive[j]; // update the column
+                    M[end_col][end_row +j +1] = col_to_receive[j]; // update the symmetric row
                 }
             }
             for (size_t j = 0; j < diag; j++) {
-                temp += M[end_row][end_row + j] * M[end_col - j][end_col]; // compute the element
+                temp += M[end_row][end_row + j] * M[end_col][end_col - j]; // compute the element
             }
             temp = cbrt(temp);
             M[end_row][end_col] = temp;
+            M[end_col][end_row] = temp;
+
         }
         // reset the flags
         need_row = false;
@@ -202,15 +208,18 @@ int main(int argc, char *argv[]){
         MPI_Recv(col_to_receive.data(), N, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE); // here I use a blocking receive because there is no possible computation overlap
 
         for (size_t j = 0; j < N - 1; j++) {
-            M[j +1][N-1 ] = col_to_receive[j];
+            M[j +1][N-1] = col_to_receive[j];
+            M[N-1][j +1] = col_to_receive[j];
+
         }
         auto col = N -1;
         auto row = 0;
         double temp = 0;
         for (size_t j = 0; j < N - 1; j++) {
-            temp += M[row][row + j] * M[col - j][col];
+            temp += M[row][row + j] * M[col][col-j];
         }
         temp = cbrt(temp);
+        M[col][row] =temp;
         M[row][col] = temp;
         auto end = chrono::high_resolution_clock::now();
         auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
@@ -224,6 +233,8 @@ int main(int argc, char *argv[]){
         MPI_Send(col_to_send.data(), N, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
     }
 
+    if (rank==0 && N<11)
+        print_matrix(M);
     
 
     MPI_Finalize();
