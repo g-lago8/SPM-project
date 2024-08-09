@@ -104,6 +104,7 @@ int main(int argc, char *argv[]){
     }
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
+    std::cout << "using " << size << " processes" <<std::endl;
     if (size < 2) {
         // abort if there is only one process
         cout << "This program is meant to be run with at least 2 processes" << endl;
