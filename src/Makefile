@@ -1,14 +1,11 @@
-# 
-# FF_ROOT     points to the FastFlow root directory (i.e.
-#             the one containing the ff directory).
 ifndef FF_ROOT 
-# print message if FF_ROOT is not defined
+# Print message if FF_ROOT is not defined
 FF_ROOT		= ${HOME}/fastflow
 #$(warning FF_ROOT is not defined. Setting it to ${FF_ROOT})
-
 endif
 
 CXX                = g++ -std=c++20
+MPICXX             = mpicxx -std=c++20
 OPTFLAGS	   = -O3 -DNDEBUG -ffast-math
 CXXFLAGS          += -Wall #-DNO_DEFAULT_MAPPING
                            #-DBLOCKING_MODE -DFF_BOUNDED_BUFFER
@@ -22,19 +19,24 @@ TARGET             = $(SOURCES:.cpp=)
 
 BIN_DIR = ../out
 
-# make out directory if it does not exist
+# Make out directory if it does not exist
 $(shell mkdir -p $(BIN_DIR))
 
-# Compile rule
+# Compile rule for standard C++ programs
 %: %.cpp 
 	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $(INCLUDES) $< -o ${BIN_DIR}/$@ $(LIBS)
 
+# Compile parallel_mpi specifically with mpicxx
+parallel_mpi: parallel_mpi.cpp
+	$(MPICXX) $(CXXFLAGS) $(OPTFLAGS) $(INCLUDES) $< -o ${BIN_DIR}/$@ $(LIBS)
 
+# Compile all targets
+all : $(TARGET) parallel_mpi
 
-all : $(TARGET)
-
+# Clean up standard targets
 clean: 
 	rm -f $(TARGET)
 
+# Clean up all generated binaries
 cleanall: clean
 	rm -f $(BIN_DIR)/*
