@@ -12,9 +12,6 @@
 #include <chrono>
 #include <utility>
 
-
-
-
 // ------------------------------------------------------------------
 // ---------------------- FARM IMPLEMENTATION -----------------------
 // ------------------------------------------------------------------
@@ -30,7 +27,7 @@ std::pair<size_t, size_t> compute_start_end(const size_t &N, size_t worker_id, s
 
 void inline compute_stencil_one_chunk(
     // Function used by the workers in the farm, computes a piece of the wavefront.
-    std::vector<std::vector<double>> &M,
+    double* M,
     const uint64_t &N,
     const uint64_t &diag,
     uint64_t &row,
@@ -41,20 +38,20 @@ void inline compute_stencil_one_chunk(
         double temp = 0;
         auto col = row + diag; 
         for(uint64_t j = 0; j < diag; ++j) {
-            temp += M[row][row+j] * M[col][col-j]; // dot product. 
+            temp += M[row * N + row + j] * M[col * N + col - j]; // dot product. 
         }
 
         // we store the result in the lower triangle, to do a dot product over two rows, 
         //instead of a dot product between a row and a column (better cache locality)
-        M[col][row] =temp; 
-        M[col][row] = std::cbrt(M[col][row]); // cube root
-        M[row][col] = M[col][row]; // store the result also in the upper triangle
+        M[col * N + row] = temp; 
+        M[col * N + row] = std::cbrt(M[col * N + row]); // cube root
+        M[row * N + col] = M[col * N + row]; // store the result also in the upper triangle
 
     }
 }
 
 struct Emitter: ff::ff_monode_t<bool, size_t>{
-    Emitter(std::vector<std::vector<double>> &M, size_t N, int n_workers):M(M), N(N), n_workers(n_workers) {}
+    Emitter(double* M, size_t N, int n_workers):M(M), N(N), n_workers(n_workers) {}
     size_t diag =0;
 
     size_t* svc(bool *diagonal_is_done){
@@ -74,22 +71,22 @@ struct Emitter: ff::ff_monode_t<bool, size_t>{
     }
 
 
-    std::vector<std::vector<double>> &M;
+    double* M;
     size_t N;
     int n_workers;
 };
 
 
 struct Worker: ff::ff_node_t<size_t, int> {
-    std::vector<std::vector<double>> &M;
+    double* M;
     size_t N;
     int n_workers;
     std::chrono::duration<double> elapsed_seconds;
-    Worker(std::vector<std::vector<double>> &M, size_t N, int n_workers): M(M), N(N), n_workers(n_workers) {}
+    Worker(double* M, size_t N, int n_workers): M(M), N(N), n_workers(n_workers) {}
     int* svc(size_t *diag)  {
         auto block = compute_start_end( N - *diag, get_my_id(), n_workers);
         compute_stencil_one_chunk(M, N, *diag, block.first, block.second - block.first + 1);
-        return new int{1};
+        return new int;
     }
 };
 
@@ -116,7 +113,7 @@ struct Collector: ff::ff_minode_t<int, bool> {
 };
 
 
-void compute_stencil_par(std::vector<std::vector<double>> &M, const uint64_t &N, int nworkers, bool on_demand=false) {
+void compute_stencil_par(double* M, const uint64_t &N, int nworkers, bool on_demand=false) {
     auto make_farm = [&]() {
         std::vector<std::unique_ptr<ff::ff_node>> W;
         for(auto i = 0; i < nworkers; ++i)
