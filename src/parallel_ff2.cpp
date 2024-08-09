@@ -3,14 +3,15 @@
 #include <iostream>
 #include <iomanip>
 
-void print_matrix(std::vector<std::vector<double>> &M){
-    for (size_t i = 0; i < M.size(); i++){
-        for (size_t j = 0; j < M.size(); j++){
-            std::cout << std::fixed << std::setprecision(2) << M[i][j] << " ";
+void print_matrix(double *M, uint64_t N){
+    for (size_t i = 0; i < N; i++){
+        for (size_t j = 0; j < N; j++){
+            std::cout << std::fixed << std::setprecision(2) << M[i*N + j] << " ";
         }
         std::cout << std::endl;
     }
 }
+
 int main(int argc, char *argv[]) {
     uint64_t N = 2048;    // default size of the matrix (NxN)
     int nworkers = 4;    // default number of workers
@@ -54,11 +55,13 @@ int main(int argc, char *argv[]) {
 
         std::cout << "Warning: chunksize * nworkers must be less than N, defaulting to N/nworkers = "<< chunksize << std::endl;
     }
-
-    std::vector<std::vector<double>> M(N, std::vector<double>(N, 0.0));
+    double* M = new double[N*N];
+    for(uint64_t i = 0; i < N; ++i) {
+        M[i * N + i] = double(i+1)/double(N);
+    }
 
     for(uint64_t i = 0; i < N; ++i) {
-        M[i][i] = double(i+1)/double(N);
+        M[i * N + i] = double(i+1)/double(N);
     }
 
     auto start = std::chrono::steady_clock::now();
@@ -72,10 +75,11 @@ int main(int argc, char *argv[]) {
     file << elapsed_seconds.count() << " " << nworkers << " " << N << std::endl;
     file.close();
 
+
     // print the matrix
     if (N < 10)
-        print_matrix(M);
+        print_matrix(M, N);
+    delete[] M;
     return 0;
+
 }
-
-
