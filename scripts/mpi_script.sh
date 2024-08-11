@@ -1,3 +1,4 @@
+#!/bin/bash
 #SBATCH --job-name=parallel_mpi
 #SBATCH --output=../results/mpi_output.txt
 #SBATCH --error=../results/mpi_error.txt
