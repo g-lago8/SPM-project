@@ -15,7 +15,6 @@ void print_matrix(double *M, uint64_t N){
 int main(int argc, char *argv[]) {
     uint64_t N = 2048;    // default size of the matrix (NxN)
     int nworkers = 4;    // default number of workers
-    size_t chunksize = 8; // default size of the chunk
     std::string filename = "strong_scaling_results2.txt";
     
     if(argc > 4) {
@@ -42,15 +41,6 @@ int main(int argc, char *argv[]) {
     if(nworkers < 1) {
         std::cout << "Error: nworkers must be greater than 0" << std::endl;
         return -1;
-    }
-    if(chunksize < 1) {
-        std::cout << "Error: chunksize must be greater than 0" << std::endl;
-        return -1;
-    }
-    if(chunksize * nworkers > N) {
-        chunksize = size_t(N/nworkers);
-
-        std::cout << "Warning: chunksize * nworkers must be less than N, defaulting to N/nworkers = "<< chunksize << std::endl;
     }
     double* M = new double[N*N];
     for(uint64_t i = 0; i < N; ++i) {
