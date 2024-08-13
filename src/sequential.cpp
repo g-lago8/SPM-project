@@ -24,14 +24,18 @@ void print_matrix(std::vector<std::vector<double>> &M){
 
 int main( int argc, char *argv[] ) {
     uint64_t N = 2048;    // default size of the matrix (NxN)
-    
-    if (argc != 1 && argc != 2) {
-        std::printf("use: %s N\n", argv[0]);
+    auto filename = "result.txt";  // default name of the file to write the results to
+    if (argc != 1 && argc != 2 && argc!=3) {
+        std::printf("use: %s [N, filename]\n", argv[0]);
         std::printf("     N size of the square matrix (default 2048)\n");
+        std::printf("     filename: name of the file to write the results to (default result.txt)\n");
         return -1;
     }
     if (argc > 1) {
         N = std::stol(argv[1]);
+    }
+    if (argc > 2) {
+        filename = argv[2];
     }
 
 
@@ -59,7 +63,7 @@ int main( int argc, char *argv[] ) {
     std::cout << "Elapsed time (sequential): " << elapsed_seconds.count() << "s\n";
     
     // write the result to a file, append
-    std::ofstream file("result.txt", std::ios::app);
+    std::ofstream file(filename, std::ios::app);
     if (file.is_open()) {
         file << N << " " << elapsed_seconds.count() << "\n";
         file.close();
