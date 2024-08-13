@@ -3,18 +3,18 @@
 #include <iostream>
 #include <iomanip>
 
-void print_matrix(double *M, uint64_t N){
-    for (size_t i = 0; i < N; i++){
-        for (size_t j = 0; j < N; j++){
-            std::cout << std::fixed << std::setprecision(2) << M[i*N + j] << " ";
+void print_matrix(std::vector<std::vector<double>> &M){
+    for (size_t i = 0; i < M.size(); i++){
+        for (size_t j = 0; j < M.size(); j++){
+            std::cout << std::fixed << std::setprecision(2) << M[i][j] << " ";
         }
         std::cout << std::endl;
     }
 }
-
 int main(int argc, char *argv[]) {
     uint64_t N = 2048;    // default size of the matrix (NxN)
     int nworkers = 4;    // default number of workers
+    size_t chunksize = 8; // default size of the chunk
     std::string filename = "strong_scaling_results2.txt";
     
     if(argc > 4) {
@@ -30,8 +30,11 @@ int main(int argc, char *argv[]) {
     if(argc > 2) {
         nworkers = std::stol(argv[2]);
     }
-    if(argc >3){
-        filename = argv[3];
+    if(argc > 3) {
+        chunksize = std::stol(argv[3]);
+    }
+    if(argc >5){
+        filename = argv[5];
     }
 
     if(N < 1) {
@@ -42,13 +45,20 @@ int main(int argc, char *argv[]) {
         std::cout << "Error: nworkers must be greater than 0" << std::endl;
         return -1;
     }
-    double* M = new double[N*N];
-    for(uint64_t i = 0; i < N; ++i) {
-        M[i * N + i] = double(i+1)/double(N);
+    if(chunksize < 1) {
+        std::cout << "Error: chunksize must be greater than 0" << std::endl;
+        return -1;
+    }
+    if(chunksize * nworkers > N) {
+        chunksize = size_t(N/nworkers);
+
+        std::cout << "Warning: chunksize * nworkers must be less than N, defaulting to N/nworkers = "<< chunksize << std::endl;
     }
 
+    std::vector<std::vector<double>> M(N, std::vector<double>(N, 0.0));
+
     for(uint64_t i = 0; i < N; ++i) {
-        M[i * N + i] = double(i+1)/double(N);
+        M[i][i] = double(i+1)/double(N);
     }
 
     auto start = std::chrono::steady_clock::now();
@@ -62,11 +72,10 @@ int main(int argc, char *argv[]) {
     file << elapsed_seconds.count() << " " << nworkers << " " << N << std::endl;
     file.close();
 
-
     // print the matrix
     if (N < 10)
-        print_matrix(M, N);
-    delete[] M;
+        print_matrix(M);
     return 0;
-
 }
+
+
