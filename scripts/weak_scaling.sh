@@ -1,16 +1,14 @@
 #!/bin/bash
 
 # Check if the correct number of arguments is provided
-if [ "$#" -ne 5 ]; then
-    echo "Usage: $0 <problem_size> <blocksize> <on_demand> <n_tries> <thread_list>"
+if [ "$#" -ne 4 ]; then
+    echo "Usage: $0 <program> <problem_size> <n_tries> <thread_list>"
     exit 1
 fi
-
-PROBLEM_SIZE=$1
-BLOCKSIZE=$2
-ON_DEMAND=$3
-N_TRIES=$4
-THREAD_LIST=$5
+PROGRAM=$1
+PROBLEM_SIZE=$2
+N_TRIES=$3
+THREAD_LIST=$4
 
 # Check if the provided number of tries is a positive integer
 if ! [[ "$N_TRIES" =~ ^[0-9]+$ ]]; then
@@ -38,6 +36,6 @@ for THREADS in "${THREAD_ARRAY[@]}"; do
     for ((i = 1; i <= N_TRIES; i++)); do
         echo "Iteration $i with $THREADS threads"
         ../out/sequential $NEW_PROBLEM_SIZE
-        ../out/parallel_ff $NEW_PROBLEM_SIZE $THREADS $BLOCKSIZE $ON_DEMAND "../results/weak_scaling.txt"
+        ../out/$PROGRAM $NEW_PROBLEM_SIZE $THREADS "../results/weak_scaling.txt"
     done
 done
