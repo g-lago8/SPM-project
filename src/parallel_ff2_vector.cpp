@@ -30,10 +30,7 @@ int main(int argc, char *argv[]) {
     if(argc > 2) {
         nworkers = std::stol(argv[2]);
     }
-    if(argc > 3) {
-        chunksize = std::stol(argv[3]);
-    }
-    if(argc >5){
+    if(argc >3){
         filename = argv[5];
     }
 
