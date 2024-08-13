@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
         nworkers = std::stol(argv[2]);
     }
     if(argc >3){
-        filename = argv[5];
+        filename = argv[3];
     }
 
     if(N < 1) {

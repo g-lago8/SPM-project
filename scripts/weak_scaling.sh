@@ -35,7 +35,7 @@ for THREADS in "${THREAD_ARRAY[@]}"; do
     
     for ((i = 1; i <= N_TRIES; i++)); do
         echo "Iteration $i with $THREADS threads"
-        ../out/sequential $NEW_PROBLEM_SIZE
+        ../out/sequential $NEW_PROBLEM_SIZE "../results/weak_scaling_seq.txt"
         ../out/$PROGRAM $NEW_PROBLEM_SIZE $THREADS "../results/weak_scaling.txt"
     done
 done
