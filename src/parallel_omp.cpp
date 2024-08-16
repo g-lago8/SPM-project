@@ -15,6 +15,7 @@ void inline compute_stencil_optim(std::vector<std::vector<double>> &M, const uin
         for(uint64_t i = 0; i < (N-diag); ++i) { // for each elem. in the diagonal
             auto i_plus_diag = i + diag;
             double temp = 0.0;
+            // #pragma omp parallel for reduction(+:temp)
             for (uint64_t j = 0; j < diag; ++j) { // for each elem. in the stencil
                 temp += M[i][i+j] * M[i_plus_diag][i_plus_diag - j];
             }
@@ -71,7 +72,7 @@ int main(int argc, char *argv[]) {
     // write the result to a file, append
     std::ofstream file("result.txt", std::ios::app);
     if (file.is_open()) {
-        file << N << " " << elapsed_seconds.count() << "\n";
+        file << N << elapsed_seconds.count() << "\n";
         file.close();
     } else {
         std::cout << "Unable to open file\n";

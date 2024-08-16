@@ -2,7 +2,7 @@
 
 # Check if the correct number of arguments is provided
 if [ "$#" -ne 4 ]; then
-    echo "Usage: $0 <program> <problem_size> <n_tries> <thread_list>"
+    echo "Usage: $0 <program> <initial_problem_size> <n_tries> <thread_list>"
     exit 1
 fi
 PROGRAM=$1
@@ -31,7 +31,7 @@ for THREADS in "${THREAD_ARRAY[@]}"; do
     NEW_PROBLEM_SIZE=$(echo "$PROBLEM_SIZE * $CUBIC_ROOT" | bc)
     NEW_PROBLEM_SIZE=${NEW_PROBLEM_SIZE%.*}  # Convert to an integer by truncating the decimal part
 
-    echo "N=$NEW_PROBLEM_SIZE, blocksize=$BLOCKSIZE, on_demand=$ON_DEMAND, threads=$THREADS for $N_TRIES times"
+    echo "N=$NEW_PROBLEM_SIZE, threads=$THREADS for $N_TRIES times"
     
     for ((i = 1; i <= N_TRIES; i++)); do
         echo "Iteration $i with $THREADS threads"
