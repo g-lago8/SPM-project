@@ -1,7 +1,9 @@
 #include "stencil_farm2_vector.hpp"
+#include "sequential_wf.hpp"
 #include <chrono>
 #include <iostream>
 #include <iomanip>
+
 
 void print_matrix(std::vector<std::vector<double>> &M){
     for (size_t i = 0; i < M.size(); i++){
@@ -29,7 +31,7 @@ int main(int argc, char *argv[]) {
         nworkers = std::stol(argv[2]);
     }
     if(argc >3){
-        std::string filename = argv[3];
+        filename = argv[3];
     }
 
     if(N < 1) {
@@ -57,13 +59,21 @@ int main(int argc, char *argv[]) {
     compute_stencil_par(M, N_sz, nworkers);
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed_seconds = end-start;
+    start = std::chrono::steady_clock::now();
+    compute_stencil_optim(M, N_sz);
+    end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed_seconds_seq = end-start;
     std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
+    std::cout << "elapsed time sequential: " << elapsed_seconds_seq.count() << "s\n";
     // write time taken, number of workers, chunksize, and N to a file
 
     if (argc > 3) {
+        std::cout << "writing to file" << filename << std::endl;
         std::ofstream file(filename, std::ios::app);
+
         if (file.is_open()) {
             file << nworkers << " " << elapsed_seconds.count() << " " << N_sz << "\n";
+            file << "sequential" << " " << elapsed_seconds_seq.count() << " " << N_sz << "\n";
             file.close();
         } else {
             std::cout << "Unable to open file\n";

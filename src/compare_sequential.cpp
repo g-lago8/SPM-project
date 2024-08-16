@@ -6,7 +6,7 @@
 #include <chrono>
 #include<cmath>
 #include<fstream>
-#include "stencil_farm.hpp"
+#include "sequential_wf.hpp"
 
 
 
