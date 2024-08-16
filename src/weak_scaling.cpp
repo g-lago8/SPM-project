@@ -14,8 +14,7 @@ void print_matrix(std::vector<std::vector<double>> &M){
 int main(int argc, char *argv[]) {
     uint64_t N = 2048;    // default size of the matrix (NxN)
     int nworkers = 4;    // default number of workers
-    std::string filename = "strong_scaling_results2.txt";
-    
+    std::string filename ;
     if(argc > 4) {
         std::printf("use: %s [N, nworkers]\n", argv[0]);
         std::printf("     N: size of the square matrix (default 2048)\n");
@@ -62,11 +61,13 @@ int main(int argc, char *argv[]) {
     // write time taken, number of workers, chunksize, and N to a file
 
     if (argc > 3) {
-        std::ofstream file;
-        std::cout << filename << std::endl;
-        file.open(filename, std::ios_base::app);
-        file << elapsed_seconds.count() << " " << nworkers << " " << N << std::endl;
-        file.close();
+        std::ofstream file(filename, std::ios::app);
+        if (file.is_open()) {
+            file << nworkers << " " << elapsed_seconds.count() << " " << N_sz << "\n";
+            file.close();
+        } else {
+            std::cout << "Unable to open file\n";
+        }
     }
     return 0;
 }
