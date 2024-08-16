@@ -28,6 +28,6 @@ for THREADS in "${THREAD_ARRAY[@]}"; do
     for ((i = 1; i <= N_TRIES; i++)); do
         echo "Iteration $i with $THREADS threads"
         ../out/sequential $PROBLEM_SIZE "../results/weak_scaling_seq.txt"    # Run the sequential version
-        ../out/weak_scaling $ROBLEM_SIZE $THREADS "../results/weak_scaling.txt" # Run the parallel version with the specified number of threads
+        ../out/weak_scaling $PROBLEM_SIZE $THREADS "../results/weak_scaling.txt" # Run the parallel version with the specified number of threads
     done
 done
