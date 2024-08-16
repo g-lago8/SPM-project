@@ -1,19 +1,15 @@
 #!/bin/bash
-
 # Set the variables from command-line arguments
-PROBLEM_SIZE=$1
-NODES=$2
-NTASKS_PER_NODE=$3
-
+#SBATCH --partition=normal
 #SBATCH --job-name=parallel_mpi
-#SBATCH --output=../results/mpi_output.txt
-#SBATCH --error=../results/mpi_error.txt
+#SBATCH -o ../results/%j.log
+#SBATCH -e ../results/%j.err
 #SBATCH --time=00:30:00
-#SBATCH --nodes=${NODES}
-#SBATCH --ntasks-per-node=${NTASKS_PER_NODE}
+#SBATCH --ntasks-per-node=1
+PROBLEM_SIZE=$1
 
-# Load the necessary module
-module load openmpi
+srun /bin/hostname
 
 # Run the MPI program with the specified problem size
-mpirun ../out/parallel_mpi ${PROBLEM_SIZE}
+
+mpirun -map-by ppr:1:node --report-bindings ../out/parallel_mpi $PROBLEM_SIZE
