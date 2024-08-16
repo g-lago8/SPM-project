@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
 
     if (argc > 3) {
         std::ofstream file;
+        cout << filename << endl;
         file.open(filename, std::ios_base::app);
         file << elapsed_seconds.count() << " " << nworkers << " " << N << std::endl;
         file.close();
