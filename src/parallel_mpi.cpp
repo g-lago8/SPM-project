@@ -6,6 +6,7 @@
 #include <cmath>
 #include <chrono>
 #include <unistd.h> 
+#include <fstream>
 
 using namespace std;
 
@@ -98,8 +99,8 @@ int main(int argc, char *argv[]){
     int rank, size;
 
     // argument check
-    if (argc != 2) {
-        cout << "Usage: " << argv[0] << " N" << endl;
+    if (argc < 2) {
+        cout << "Usage: " << argv[0] << " N" << "[filename]" << endl;
         return 1;
     }
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -226,6 +227,13 @@ int main(int argc, char *argv[]){
         auto end = chrono::high_resolution_clock::now();
         auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
         cout << "Time: " << duration.count() << " ms" << endl;
+        if (rank == 0 && argc > 2){
+            auto filename = argv[2] ;
+            ofstream outfile(filename, ios::app);
+            if (outfile.is_open()) {
+            outfile << N << " " << size << " " <<duration.count() << endl;
+            }
+        }
     }
     
     if (rank == 1){
@@ -237,7 +245,6 @@ int main(int argc, char *argv[]){
 
     if (rank==0 && N<11)
         print_matrix(M);
-    
 
     MPI_Finalize();
     return 0;
