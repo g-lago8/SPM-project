@@ -30,6 +30,9 @@ $(shell mkdir -p $(BIN_DIR))
 parallel_mpi: parallel_mpi.cpp
 	$(MPICXX) $(CXXFLAGS) $(OPTFLAGS) $(INCLUDES) $< -o ${BIN_DIR}/$@ $(LIBS)
 
+# Compile rule for OpenMP program
+%_omp: %_omp.cpp
+	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $(INCLUDES) -fopenmp $< -o ${BIN_DIR}/$@ $(LIBS)
 # Compile all targets
 all : $(TARGET) parallel_mpi
 

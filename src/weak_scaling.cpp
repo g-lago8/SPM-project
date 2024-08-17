@@ -1,4 +1,4 @@
-#include "stencil_farm2_vector.hpp"
+#include "farm_wf.hpp"
 #include "sequential_wf.hpp"
 #include <chrono>
 #include <iostream>

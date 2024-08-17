@@ -8,14 +8,12 @@
 #include <chrono>
 #include<cmath>
 #include<fstream>
-#include "stencil_farm.hpp"
+#include "sequential_wf.hpp"
 #include <iomanip>
-
 
 void print_matrix(std::vector<std::vector<double>> &M){
     for (size_t i = 0; i < M.size(); i++){
         for (size_t j = 0; j < M.size(); j++){
-            // cout << M[i][j] << " "; with 2 decimal points
             std::cout << std::fixed << std::setprecision(2) << M[i][j] << " ";
         }
         std::cout << std::endl;

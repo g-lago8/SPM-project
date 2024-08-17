@@ -1,4 +1,5 @@
-#include "stencil_farm.hpp"
+#include "farm_wf.hpp"
+#include "sequential_wf.hpp"
 #include <chrono>
 #include <iostream>
 
@@ -63,7 +64,7 @@ int main(int argc, char *argv[]) {
     }
 
     auto M1 = M;
-    compute_stencil_par(M, N, nworkers, chunksize, on_demand);
+    compute_stencil_par(M, N, nworkers);
     compute_stencil_optim(M1, N);
 
     // check correctness

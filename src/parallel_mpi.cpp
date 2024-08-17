@@ -63,7 +63,7 @@ void check_first(
         MPI_Irecv(row_to_receive.data(), N, MPI_DOUBLE, rank-1, 0, MPI_COMM_WORLD, &requests[1]);
     }
     else{
-        for (auto i{0}; i <diag; i++ ){
+        for (size_t i = 0; i <diag; i++ ){
             col_to_send[i] = M[se.start + i ][se.start+diag - 1];
         }
         MPI_Isend(col_to_send.data(), N, MPI_DOUBLE, rank -1, 0, MPI_COMM_WORLD, &requests[1]);
@@ -85,7 +85,7 @@ void check_last(
         *need_col =true;
         MPI_Irecv(col_to_receive.data(), N, MPI_DOUBLE, rank +1, 0, MPI_COMM_WORLD, &requests[0]) ;
     } else{
-        for (auto i{0}; i<diag;i++){
+        for (size_t i= 0; i<diag;i++){
             row_to_send[i] = M[se.end + 1][se.end + i + 1];
         }
         MPI_Isend(row_to_send.data(), N,  MPI_DOUBLE, rank +1, 0, MPI_COMM_WORLD, &requests[0]);
@@ -161,8 +161,8 @@ int main(int argc, char *argv[]){
 
         compute_internal_part(se, diag, M, N); // compute the element in the middle of the chunk -> surely no dependencies
  
-
-        if ( rank < n_active_processes && rank < N -diag ){ // for each active process (except the last one in the case that the diag is shorter than the number of processes), compute the first and last element
+        auto rank_ull = static_cast<unsigned long long>(rank);
+        if ( rank < n_active_processes && rank_ull < N -diag ){ // for each active process (except the last one in the case that the diag is shorter than the number of processes), compute the first and last element
             double temp = 0;
             size_t start_row =se.start;
             auto start_col = start_row + diag;
