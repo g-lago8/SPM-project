@@ -28,7 +28,11 @@ $(shell mkdir -p $(BIN_DIR))
 
 # Compile parallel_mpi specifically with mpicxx
 parallel_mpi: parallel_mpi.cpp
+ifdef USE_OPENMP
+	$(MPICXX) $(CXXFLAGS) $(OPTFLAGS) $(INCLUDES) -fopenmp $< -o ${BIN_DIR}/$@ $(LIBS)
+else
 	$(MPICXX) $(CXXFLAGS) $(OPTFLAGS) $(INCLUDES) $< -o ${BIN_DIR}/$@ $(LIBS)
+endif
 
 # Compile rule for OpenMP program
 %_omp: %_omp.cpp
