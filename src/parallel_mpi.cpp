@@ -226,7 +226,6 @@ int main(int argc, char *argv[]){
         M[row][col] = temp;
         auto end = chrono::high_resolution_clock::now();
         auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
-        cout << "Time: " << duration.count() << " ms" << endl;
         if (rank == 0 && argc > 2){
             auto filename = argv[2] ;
             ofstream outfile(filename, ios::app);
