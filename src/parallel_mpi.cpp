@@ -36,6 +36,7 @@ start_end compute_start_end(int rank, int size, size_t N) {
 
 void compute_internal_part(start_end se, size_t diag, vector<vector<double>> &M, size_t N) {
     if (se.start + 1 > se.end) return;
+    #pragma omp parallel for // parallelize the computation of the internal part
     for (auto row = se.start + 1; row < se.end; row++) {
         auto col = row + diag;
         double temp = 0;
