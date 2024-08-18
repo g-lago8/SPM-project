@@ -1,4 +1,5 @@
 #include <mpi.h>
+#include <omp.h>
 #include <stdio.h>
 #include <vector>
 #include<iostream>  
@@ -227,16 +228,20 @@ int main(int argc, char *argv[]){
         M[row][col] = temp;
         auto end = chrono::high_resolution_clock::now();
         auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
-        if (rank == 0 && argc > 2){
+        if ( argc > 2){
             auto filename = argv[2] ;
             ofstream outfile(filename, ios::app);
             if (outfile.is_open()) {
-            outfile << N << " " << size << " " <<duration.count() << endl;
+            outfile << N << " " << size << " " << duration.count();
+#ifdef _OPENMP
+            outfile << " " << omp_get_max_threads();
+#endif
+            outfile << endl;
             }
         }
-    }
-    
-    if (rank == 1){
+        }
+        
+        if (rank == 1){
         for (size_t j = 0; j < N - 1; j++) {
             col_to_send[j] = M[j +1][N-1];
         }
