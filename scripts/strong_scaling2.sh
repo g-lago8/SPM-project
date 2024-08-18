@@ -1,10 +1,17 @@
 #!/bin/bash
 
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH -o ../results/ff_%j.log
+#SBATCH -e ../results/ff_%j.err
+
 # Check if the correct number of arguments is provided
 if [ "$#" -ne 4 ]; then
     echo "Usage: $0 <program> <problem_size> <n_tries> <thread_list>"
     exit 1
 fi
+# run mapping strings on the node
+# yes y | ~/fastflow/ff/mapping_string.sh
 
 PROGRAM=$1
 PROBLEM_SIZE=$2
