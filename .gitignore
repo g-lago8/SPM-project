@@ -2,3 +2,5 @@
 out/
 results/images
 results/tables
+results/logs
+results/errors
