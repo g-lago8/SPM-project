@@ -109,6 +109,9 @@ int main(int argc, char *argv[]){
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     if (rank == 0)
         std::cout << "using " << size << " processes" <<std::endl;
+    if (rank == 0)
+        std::cout<<argc<<endl;
+
     if (size < 2) {
         // abort if there is only one process
         cout << "This program is meant to be run with at least 2 processes" << endl;
@@ -228,7 +231,8 @@ int main(int argc, char *argv[]){
         M[row][col] = temp;
         auto end = chrono::high_resolution_clock::now();
         auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
-        if ( argc > 2){
+        std::cout<<"duration "<<duration.count()<<endl;
+	if ( argc > 2){
             auto filename = argv[2] ;
             ofstream outfile(filename, ios::app);
             if (outfile.is_open()) {
