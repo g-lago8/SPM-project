@@ -7,7 +7,6 @@
 #SBATCH --time=00:30:00
 PROBLEM_SIZE=$1
 PPR=$2
-OMP_NUM_THREADS=$3
 #SBATCH --ntasks-per-node=$PPR
 
 srun /bin/hostname
