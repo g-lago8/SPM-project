@@ -25,7 +25,7 @@ Brief explanation of the files in the `src` folder:
 
 - `parallel_omp.cpp`: Parallel version with just OpenMP (not present in the report).
 
-- `weak_scaling.cpp`: simply runs the sequential implementation and that in `parallel_ff.cpp`, but on a matrix of size $N\times \sqrt[3]{nworkers} $, where $N$ is chosen by the user. This is a (pretty dumb) way I found to write a simple weak scaling test, without having to do floating point operations in shell scripts.
+- `weak_scaling.cpp`: simply runs the sequential implementation and that in `parallel_ff.cpp`, but on a matrix of size $N\times \sqrt[3]{nworkers} $, where $N$ is chosen by the user. This is a (pretty dumb) way I found to write a simple weak scaling test, without having to do floating point operations in shell scripts, which requires `bc` ( installed in the fontend node but not in the other nodes).
 
 Additionally, with the command `make parallel_mpi USE_OPENMP=1` you can compile the MPI version with OpenMP support. The number of threads is set by the environment variable `OMP_NUM_THREADS`.
 
