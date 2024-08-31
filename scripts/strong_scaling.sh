@@ -1,5 +1,8 @@
 #!/bin/bash
-
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH -o ../results/logs/ff_bc_%j.log
+#SBATCH -e ../results/errors/ff_bc-%j.err
 # Check if the correct number of arguments is provided
 if [ "$#" -ne 5 ]; then
     echo "Usage: $0 <problem_size> <blocksize> <on_demand> <n_tries> <thread_list>"
@@ -28,6 +31,6 @@ for THREADS in "${THREAD_ARRAY[@]}"; do
     
     for ((i = 1; i <= N_TRIES; i++)); do
         echo "Iteration $i with $THREADS threads"
-        ../out/parallel_ff $PROBLEM_SIZE $THREADS $BLOCKSIZE $ON_DEMAND 
+        ../out/parallel_ff_block_cyclic $PROBLEM_SIZE $THREADS $BLOCKSIZE $ON_DEMAND strong_scaling_results_block_cyclic.txt
     done
 done

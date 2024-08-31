@@ -1,4 +1,8 @@
 #!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH -o ../results/logs/ff_ws_%j.log
+#SBATCH -e ../results/errors/ff_ws_%j.err
 
 # Check if the correct number of arguments is provided
 if [ "$#" -ne 3 ]; then

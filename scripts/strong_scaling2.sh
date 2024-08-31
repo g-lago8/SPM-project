@@ -2,8 +2,8 @@
 
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH -o ../results/ff_%j.log
-#SBATCH -e ../results/ff_%j.err
+#SBATCH -o ../results/logs/ff_%j.log
+#SBATCH -e ../results/errors/ff_%j.err
 
 # Check if the correct number of arguments is provided
 if [ "$#" -ne 4 ]; then
@@ -13,10 +13,9 @@ fi
 # run mapping strings on the node
 # yes y | ~/fastflow/ff/mapping_string.sh
 
-PROGRAM=$1
-PROBLEM_SIZE=$2
-N_TRIES=$3
-THREAD_LIST=$4
+PROBLEM_SIZE=$1
+N_TRIES=$2
+THREAD_LIST=$3
 
 # Check if the provided number of tries is a positive integer
 if ! [[ "$N_TRIES" =~ ^[0-9]+$ ]]; then
@@ -33,6 +32,6 @@ for THREADS in "${THREAD_ARRAY[@]}"; do
     
     for ((i = 1; i <= N_TRIES; i++)); do
         echo "Iteration $i with $THREADS threads"
-        ../out/$PROGRAM $PROBLEM_SIZE $THREADS ../results/strong_scaling_results.txt
+        ../out/parallel_ff $PROBLEM_SIZE $THREADS ../results/strong_scaling_results.txt
     done
 done
