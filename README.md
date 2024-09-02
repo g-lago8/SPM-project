@@ -5,8 +5,8 @@ for each diagonal element of a square matrix $M$ ($N\times N$) of double precisi
 elements, we compute each the element in the superdiagonal $k$  as the dot-product of the same row and the same column of the element.
 
 ![Wavefront Picture](image.png)
-## Usage
 
+## Usage
 To compile the code, run the following command in the folder `src`:
 ```bash
 make all
@@ -32,7 +32,6 @@ Results will be in the file `results/strong_scaling_results.txt`.
 Usage: `./weak_scaling.sh <initial_matrix_size> <n_repetitions> <thread_list>`. `initial_matrix_size` is the size of the matrix for 1 worker, and the size of the matrix for n workers is $N\times \sqrt[3]{nworkers} $, where $N$ is the `initial_matrix_size`.
 Results will be in the file `results/weak_scaling_results.txt`.
 - `sequential.sh`: runs the sequential code on the cluster with a fixed matrix size. Usage: `./sequential.sh <matrix_size>.` Results will be in the file `results/sequential_results.txt`.
-
 - `run_mpi.sh`: Runs the MPI code on the cluster with a fixed matrix size the given number of workers. Usage: 
 `sbatch --nodes=N run_mpi.sh <matrix_size> <processes_per_node>`. 
 - `run_mpi_omp.sh`: Runs the MPI code with OMP on the cluster with a fixed matrix size the given number of workers. Usage:
