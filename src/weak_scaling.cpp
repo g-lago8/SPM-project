@@ -72,8 +72,8 @@ int main(int argc, char *argv[]) {
         std::ofstream file(filename, std::ios::app);
 
         if (file.is_open()) {
-            file << nworkers << " " << elapsed_seconds.count() << " " << N_sz << "\n";
-            file << "sequential" << " " << elapsed_seconds_seq.count() << " " << N_sz << "\n";
+            file << N_sz << " " << nworkers     << " " << elapsed_seconds.count() << "\n";
+            file << N_sz << " " << "sequential" << " " << elapsed_seconds_seq.count() << " " << "\n";
             file.close();
         } else {
             std::cout << "Unable to open file\n";

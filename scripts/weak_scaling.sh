@@ -9,7 +9,7 @@ if [ "$#" -ne 3 ]; then
     echo "Usage: $0  <initial_problem_size> <n_tries> <thread_list>"
     exit 1
 fi
-PROBLEM_SIZE=$1
+INITIAL_PROBLEM_SIZE=$1
 N_TRIES=$2
 THREAD_LIST=$3
 
@@ -19,6 +19,13 @@ if ! [[ "$N_TRIES" =~ ^[0-9]+$ ]]; then
     exit 1
 fi
 
+OUT_FILE=../results/weak_scaling_results.txt
+# if the file does not exists, create it with the header
+if [ ! -f $OUT_FILE ]; then
+    echo "N n_workers time" > $OUT_FILE
+fi
+
+
 # Convert thread list to an array
 IFS=',' read -r -a THREAD_ARRAY <<< "$THREAD_LIST"
 
@@ -27,10 +34,10 @@ IFS=',' read -r -a THREAD_ARRAY <<< "$THREAD_LIST"
 for THREADS in "${THREAD_ARRAY[@]}"; do
     # Calculate the new problem size
 
-    echo "initial N=$PROBLEM_SIZE, threads=$THREADS for $N_TRIES times"
+    echo "initial N=$INITIAL_PROBLEM_SIZE, threads=$THREADS for $N_TRIES times"
     
     for ((i = 1; i <= N_TRIES; i++)); do
         echo "Iteration $i with $THREADS threads"
-        ../out/weak_scaling $PROBLEM_SIZE $THREADS "../results/weak_scaling.txt" # Run the parallel version with the specified number of threads
+        ../out/weak_scaling $INITIAL_PROBLEM_SIZE $THREADS $OUT_FILE # Run the parallel version with the specified number of threads
     done
 done

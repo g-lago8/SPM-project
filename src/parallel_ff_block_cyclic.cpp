@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
     // write time taken, number of workers, chunksize, and N to a file
     std::ofstream file;
     file.open("../results/"+filename, std::ios_base::app);
-    file << elapsed_seconds.count() << " " << nworkers << " " << chunksize << " " << N << " " << int(on_demand)<< std::endl;
+    file << N << " " << nworkers << " " <<  " "  << chunksize << " "  << int(on_demand)<< " " << elapsed_seconds.count() << std::endl;
     file.close();
 
     return 0;

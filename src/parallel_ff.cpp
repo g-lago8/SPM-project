@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
     // write time taken, number of workers, chunksize, and N to a file
     std::ofstream file;
     file.open(filename, std::ios_base::app);
-    file << elapsed_seconds.count() << " " << nworkers << " " << N << std::endl;
+    file << N << " " << nworkers << " " << elapsed_seconds.count() << std::endl;
     file.close();
 
     // print the matrix

@@ -21,7 +21,11 @@ if ! [[ "$N_TRIES" =~ ^[0-9]+$ ]]; then
     echo "Error: The number of tries must be a positive integer."
     exit 1
 fi
-
+OUT_FILE=../results/strong_scaling_results_block_cyclic.txt
+# if the file does not exists, create it with the header
+if [ ! -f $OUT_FILE ]; then
+    echo "N n_workers chunk_size on_demand time" > $OUT_FILE
+fi
 # Convert thread list to an array
 IFS=',' read -r -a THREAD_ARRAY <<< "$THREAD_LIST"
 

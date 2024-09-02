@@ -11,7 +11,12 @@ PPR=$2
 
 srun /bin/hostname
 
-# Run the MPI program with the specified problem size
+OUT_FILE=../results/mpi_results
+# if the file does not exists, create it with the header
+if [ ! -f $OUT_FILE]; then
+    echo "N mpi_processes time omp_threads" > $OUT_FILE
+fi
 
-mpirun -map-by ppr:$PPR:node --report-bindings ../out/parallel_mpi_omp $PROBLEM_SIZE ../results/mpi_results
+# Run the MPI program with the specified problem size
+mpirun -map-by ppr:$PPR:node --report-bindings ../out/parallel_mpi_omp $PROBLEM_SIZE $OUT_FILE
 

@@ -23,6 +23,12 @@ if ! [[ "$N_TRIES" =~ ^[0-9]+$ ]]; then
     exit 1
 fi
 
+OUT_FILE=../results/strong_scaling_results.txt
+# if the file does not exists, create it with the header
+if [ ! -f $OUT_FILE ]; then
+    echo "N n_workers time" > $OUT_FILE
+fi
+
 # Convert thread list to an array
 IFS=',' read -r -a THREAD_ARRAY <<< "$THREAD_LIST"
 
@@ -32,6 +38,6 @@ for THREADS in "${THREAD_ARRAY[@]}"; do
     
     for ((i = 1; i <= N_TRIES; i++)); do
         echo "Iteration $i with $THREADS threads"
-        ../out/parallel_ff $PROBLEM_SIZE $THREADS ../results/strong_scaling_results.txt
+        ../out/parallel_ff $PROBLEM_SIZE $THREADS $OUT_FILE
     done
 done
