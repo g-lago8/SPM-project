@@ -38,4 +38,5 @@ Results will be in the file `results/weak_scaling_results.txt`.
 - `run_mpi_omp.sh`: Runs the MPI code with OMP on the cluster with a fixed matrix size the given number of workers. Usage:
 `sbatch --nodes=N run_mpi_omp.sh <matrix_size> <processes_per_node>`.
 
-### Results When running the scripts, results will be found in the `results` folder, as a space separated values file, containing matrix, size, number of workers/processes, time taken and eventual other hyperparameters. 
+### Results
+When running the scripts, results will be found in the `results` folder, as a space separated values file, containing matrix, size, number of workers/processes, time taken and eventual other hyperparameters. 
