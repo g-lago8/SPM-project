@@ -27,15 +27,14 @@ $(shell mkdir -p $(BIN_DIR))
 	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $(INCLUDES) $< -o ${BIN_DIR}/$@ $(LIBS)
 
 # Compile parallel_mpi specifically with mpicxx
-parallel_mpi: parallel_mpi.cpp
-ifdef USE_OPENMP
+parallel_mpi_omp: parallel_mpi.cpp
 	$(MPICXX) $(CXXFLAGS) $(OPTFLAGS) $(INCLUDES) -fopenmp $< -o ${BIN_DIR}/$@_omp $(LIBS)
-else
+parallel_mpi: parallel_mpi.cpp
 	$(MPICXX) $(CXXFLAGS) $(OPTFLAGS) $(INCLUDES) $< -o ${BIN_DIR}/$@ $(LIBS)
-endif
+
 
 # Compile rule for OpenMP program
-%_omp: %_omp.cpp
+parallel_omp: parallel_omp.cpp
 	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $(INCLUDES) -fopenmp $< -o ${BIN_DIR}/$@ $(LIBS)
 # Compile all targets
 all : $(TARGET) parallel_mpi
