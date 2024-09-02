@@ -4,7 +4,7 @@ Implementation of a parallel version of a matrix wavefront:
 for each diagonal element of a square matrix $M$ ($N\times N$) of double precision
 elements, we compute each the element in the superdiagonal $k$  as the dot-product of the same row and the same column of the element.
 
-![Wavefront Picture](image.png)
+![Wavefront Picture](wavefront.png)
 
 ## Usage
 To compile the code, run the following command in the folder `src`:
