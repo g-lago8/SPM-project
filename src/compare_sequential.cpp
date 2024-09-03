@@ -77,5 +77,5 @@ int main( int argc, char *argv[] ) {
             }
         }
     }
-    std::cout << "All results are equal! Sburreck!\n";
+    std::cout << "All results are equal!\n";
 }
