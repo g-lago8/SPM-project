@@ -7,7 +7,9 @@ elements, we compute each the element in the superdiagonal $k$  as the dot-produ
 ![Wavefront Picture](wavefront.png)
 
 ## Usage
-To compile the code, run the following command in the folder `src`:
+1. **IMPORTANT**: run `setup.sh` in the `src` folder, to run FastFlow `mapping_string` (on a cluster node), and create necessary folders.
+
+2. To compile the code, run the following command in the folder `src`:
 ```bash
 make all
 ```
