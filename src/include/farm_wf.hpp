@@ -21,10 +21,10 @@
 
 // define a block of elements as a pair of start and end indices
 std::pair<size_t, size_t> compute_start_end(const size_t &N, size_t worker_id, size_t n_workers) {
-    size_t base_chunk = N / n_workers;
+    size_t base_chunk = N / n_workers; // number of elements per worker 
     size_t remainder = N % n_workers;
-    size_t start = worker_id * base_chunk + std::min(worker_id, remainder);
-    size_t end = start + base_chunk + (worker_id < remainder ? 1 : 0) - 1;
+    size_t start = worker_id * base_chunk + std::min(worker_id, remainder); // start index
+    size_t end = start + base_chunk + (worker_id < remainder ? 1 : 0) - 1; // if the worker is on the first remainder workers, it gets an extra element
     return {start, end};
 }
 
@@ -43,16 +43,16 @@ void inline compute_stencil_one_chunk(
         for(uint64_t j = 0; j < diag; ++j) {
             temp += M[row][row+j] * M[col][col-j]; // dot product. 
         }
-
         // we store the result in the lower triangle, to do a dot product over two rows, 
         //instead of a dot product between a row and a column (better cache locality)
-        M[col][row] =temp; 
+        M[col][row] =temp; // store the result in the lower triangle 
         M[col][row] = std::cbrt(M[col][row]); // cube root
         M[row][col] = M[col][row]; // store the result also in the upper triangle
 
     }
 }
 
+// emitter node: it sends the diagonal to the workers, and synchronizes the computation
 struct Emitter: ff::ff_monode_t<bool, size_t>{
     Emitter(std::vector<std::vector<double>> &M, size_t N, int n_workers):M(M), N(N), n_workers(n_workers) {}
     size_t diag =0;
@@ -66,8 +66,7 @@ struct Emitter: ff::ff_monode_t<bool, size_t>{
         }
         
         for(int nw = 0; nw < n_workers; nw ++){      // for each elem. in the diagonal
-            //std::cout << "worker" << nw << "computing elements" << "[" << compute_start_end(N - diag, nw, n_workers).first << ", " << compute_start_end(N-diag, nw, n_workers).second << "]" << std::endl;
-            ff_send_out(&diag);
+            ff_send_out(&diag); // send the current diagonal to the workers
         }
         if (diag == N -1) return EOS;
         return GO_ON;
@@ -87,13 +86,13 @@ struct Worker: ff::ff_node_t<size_t, int> {
     std::chrono::duration<double> elapsed_seconds;
     Worker(std::vector<std::vector<double>> &M, size_t N, int n_workers): M(M), N(N), n_workers(n_workers) {}
     int* svc(size_t *diag)  {
-        auto block = compute_start_end( N - *diag, get_my_id(), n_workers);
+        auto block = compute_start_end( N - *diag, get_my_id(), n_workers); // get the block of elements to compute
         compute_stencil_one_chunk(M, N, *diag, block.first, block.second - block.first + 1);
         return new int{1};
     }
 };
 
-
+// collector node: it waits for all the workers to finish computing the elements in the diagonal
 struct Collector: ff::ff_minode_t<int, bool> {
     std::chrono::duration<double> elapsed_seconds;
     Collector(size_t N, int n_workers): N(N), n_workers(n_workers) {}
@@ -115,9 +114,9 @@ struct Collector: ff::ff_minode_t<int, bool> {
     int n_workers;
 };
 
-
+// parallel version of the stencil computation using a farm(emitter, worker(s), collector)
 void compute_stencil_par(std::vector<std::vector<double>> &M, const uint64_t &N, int nworkers, bool on_demand=false) {
-    auto make_farm = [&]() {
+    auto make_farm = [&]() { // create the farm workers vector
         std::vector<std::unique_ptr<ff::ff_node>> W;
         for(auto i = 0; i < nworkers; ++i)
             W.push_back(std::make_unique<Worker>(M, N, nworkers));
@@ -126,11 +125,10 @@ void compute_stencil_par(std::vector<std::vector<double>> &M, const uint64_t &N,
     Emitter emitter(M, N, nworkers);
     Collector collector(N, nworkers);
     ff::ff_Farm<> farm(std::move(make_farm()), emitter, collector);
-    farm.wrap_around();
+    farm.wrap_around(); // backward connection from collector to emitter
     if(on_demand) 
         farm.set_scheduling_ondemand();
 
-      
     if(farm.run_and_wait_end() < 0) {
         ff::error("running farm");
         return;

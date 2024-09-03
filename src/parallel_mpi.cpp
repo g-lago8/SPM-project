@@ -8,20 +8,18 @@
 #include <chrono>
 #include <unistd.h> 
 #include <fstream>
-
 using namespace std;
 
 void print_matrix(vector<vector<double>> &M){
     for (size_t i = 0; i < M.size(); i++){
         for (size_t j = 0; j < M.size(); j++){
-            // cout << M[i][j] << " "; with 2 decimal points
             cout << fixed << setprecision(2) << M[i][j] << " ";
         }
         cout << endl;
     }
 }
 
-struct start_end {
+struct start_end { // struct to store the start and end indices of the chunk
     size_t start;
     size_t end;
 };
@@ -36,17 +34,18 @@ start_end compute_start_end(int rank, int size, size_t N) {
 }
 
 void compute_internal_part(start_end se, size_t diag, vector<vector<double>> &M, size_t N) {
+    // compute the internal part of the chunk (the part that does not depend on other processes)
     if (se.start + 1 > se.end) return;
-    #pragma omp parallel for // parallelize the computation of the internal part
-    for (auto row = se.start + 1; row < se.end; row++) {
+    #pragma omp parallel for // parallelize the computation of the internal part with OpenMP
+    for (auto row = se.start + 1; row < se.end; row++) {  // for each row in the chunk
         auto col = row + diag;
         double temp = 0;
         for (size_t j = 0; j < diag; j++) {
-            temp += M[row][row + j] * M[col][col -j];
+            temp += M[row][row + j] * M[col][col -j]; // dot product
         }
-        temp = cbrt(temp);
-        M[col][row] = temp;
-        M[row][col] = temp;
+        temp = cbrt(temp); // cube root
+        M[col][row] = temp; // store the result in the lower triangle
+        M[row][col] = temp; // store the result in the upper triangle
     }
 }
 
@@ -61,11 +60,10 @@ void check_first(
     vector<double> &col_to_send,
     vector<double> &row_to_receive
 ){
-     if (M[se.start][se.start+diag - 1] < 0){
-        *need_row = true;
+     if (M[se.start][se.start+diag - 1] < 0){ // if the process does not have the element to the left, we need the row (assumes all computed elements are >= 0, as resulting from the initialization)
         MPI_Irecv(row_to_receive.data(), N, MPI_DOUBLE, rank-1, 0, MPI_COMM_WORLD, &requests[1]);
     }
-    else{
+    else{ // else, we need to send the column (start + diag -1) to the left process
         for (size_t i = 0; i <diag; i++ ){
             col_to_send[i] = M[se.start + i ][se.start+diag - 1];
         }
@@ -84,11 +82,11 @@ void check_last(
     vector <double> &row_to_send,
     vector <double> &col_to_receive
 ){
-    if (M[se.end +1][se.end + diag] < 0){
+    if (M[se.end +1][se.end + diag] < 0){ // if the process does not have the element below, we need the column
         *need_col =true;
         MPI_Irecv(col_to_receive.data(), N, MPI_DOUBLE, rank +1, 0, MPI_COMM_WORLD, &requests[0]) ;
     } else{
-        for (size_t i= 0; i<diag;i++){
+        for (size_t i= 0; i<diag;i++){ // else, we need to send the row (end + 1) to the right process
             row_to_send[i] = M[se.end + 1][se.end + i + 1];
         }
         MPI_Isend(row_to_send.data(), N,  MPI_DOUBLE, rank +1, 0, MPI_COMM_WORLD, &requests[0]);
@@ -118,9 +116,9 @@ int main(int argc, char *argv[]){
         MPI_Finalize();
         return 1;
     }
-    
     size_t N = atoi(argv[1]);
-    vector<vector<double>> M(N, vector<double>(N, -1));
+
+    vector<vector<double>> M(N, vector<double>(N, -1)); // initialize the matrix with -1
     auto se = compute_start_end(rank, size, N);
 
     for (size_t row = se.start; row <= se.end; row++) {
@@ -146,17 +144,17 @@ int main(int argc, char *argv[]){
 
     for (size_t diag = 1; diag < N - 1; diag ++){
         se = compute_start_end(rank, size, N - diag); // compute first and last element to be processed by this process
-        auto n_active_processes = min(size,int( N - diag ) + 1); // number of active processes (typically = size, but can be less for the last few iterations
+        auto n_active_processes = min(size,int( N - diag ) + 1); // number of active processes (typically = size, but is less for the last few diagonals
         
         // first process does not need to check first
         if (rank == 0){
             if (n_active_processes > 1){
-               check_last(se, diag, N, M, rank, requests, &need_col, row_to_send, col_to_receive); // check if we need the last column, or we need to give thelast row from/to the next process
+               check_last(se, diag, N, M, rank, requests, &need_col, row_to_send, col_to_receive); // check wheter we need the last column, or we need to give the last row to the next process
             }
         }
         // last process does not need to check last element
         if ( rank == n_active_processes -1){
-            check_first(se, diag, N, M, rank, requests, &need_row, col_to_send, row_to_receive); // check if we need the first row, or we need to give the first column from/to the previous process
+            check_first(se, diag, N, M, rank, requests, &need_row, col_to_send, row_to_receive); // check wheter we need the first row, or we need to give the first column to the previous process
         }
 
         // all other processes need to check both
@@ -165,7 +163,7 @@ int main(int argc, char *argv[]){
             check_last(se, diag, N, M, rank, requests, &need_col, row_to_send, col_to_receive);
         }
 
-        compute_internal_part(se, diag, M, N); // compute the element in the middle of the chunk -> surely no dependencies
+        compute_internal_part(se, diag, M, N); // compute the element in the middle of the chunk -> surely no dependencies from other processes
  
         auto rank_ull = static_cast<unsigned long long>(rank);
         if ( rank < n_active_processes && rank_ull < N -diag ){ // for each active process (except the last one in the case that the diag is shorter than the number of processes), compute the first and last element
@@ -212,8 +210,14 @@ int main(int argc, char *argv[]){
     }
 
     // last step: compute the last element M[0][N-1] taking the missing column from process 1
+    if (rank == 1){
+        for (size_t j = 0; j < N - 1; j++) {
+            col_to_send[j] = M[j +1][N-1];
+        }
+        MPI_Send(col_to_send.data(), N, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+    }
     if (rank == 0){
-        MPI_Recv(col_to_receive.data(), N, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE); // here I use a blocking receive because there is no possible computation overlap
+        MPI_Recv(col_to_receive.data(), N, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE); // blocking receive because there is no possible computation overlap 
 
         for (size_t j = 0; j < N - 1; j++) {
             M[j +1][N-1] = col_to_receive[j];
@@ -232,29 +236,20 @@ int main(int argc, char *argv[]){
         auto end = chrono::high_resolution_clock::now();
         auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
         std::cout<<"duration "<<duration.count()<<endl;
-	if ( argc > 2){
+	    if ( argc > 2){
             auto filename = argv[2] ;
             ofstream outfile(filename, ios::app);
             if (outfile.is_open()) {
             outfile << N << " " << size << " " << duration.count();
-#ifdef _OPENMP
-            outfile << " " << omp_get_max_threads();
-#endif
+            #ifdef _OPENMP
+                outfile << " " << omp_get_max_threads();
+            #endif
             outfile << endl;
             }
         }
-        }
-        
-        if (rank == 1){
-        for (size_t j = 0; j < N - 1; j++) {
-            col_to_send[j] = M[j +1][N-1];
-        }
-        MPI_Send(col_to_send.data(), N, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+        if (N < 11) // print the matrix if it is small enough
+            print_matrix(M);
     }
-
-    if (rank==0 && N<11)
-        print_matrix(M);
-
     MPI_Finalize();
     return 0;
 }

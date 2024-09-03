@@ -1,5 +1,6 @@
 #!/bin/bash
 # Run mapping_string.sh on cluster node
+echo "Running mapping_string.sh on cluster node..."
 if [[ -z "$FF_ROOT" ]]; then
    FF_ROOT=~/fastflow
 fi
