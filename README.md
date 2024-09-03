@@ -1,8 +1,9 @@
 # SPM-project
-Project of the Course Parallel and Distributed Systems, University of Pisa
-Implementation of a parallel version of a matrix wavefront:
+This repository contains the code for the final project of the Course Parallel and Distributed Systems, University of Pisa.
+
+The project consists in the implementation of a parallel version of a matrix wavefront:
 for each diagonal element of a square matrix $M$ ($N\times N$) of double precision
-elements, we compute each the element in the superdiagonal $k$  as the dot-product of the same row and the same column of the element.
+floats, we compute each the element in the superdiagonal $k$  as the dot-product of the same row and the same column of the element.
 
 ![Wavefront Picture](wavefront.png)
 
