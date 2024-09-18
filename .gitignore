@@ -1,5 +1,5 @@
 .vscode
-out/*
+out/
 results/images
 results/tables
 results/logs

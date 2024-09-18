@@ -68,9 +68,7 @@ int main( int argc, char *argv[] ) {
     } else {
         std::cout << "Unable to open file\n";
     }
-    if (N < 10) {
-        print_matrix(M);
-    }
+    std::cout <<M[0][N-1]<<std::endl;
 
     return 0;
 

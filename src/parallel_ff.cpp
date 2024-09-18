@@ -98,7 +98,6 @@ int main(int argc, char *argv[])
     file.close();
 
     // print the matrix
-    if (N < 10)
-        print_matrix(M);
+    std::cout << M[0][N-1]<<std::endl;
     return 0;
 }
