@@ -28,7 +28,7 @@ $(shell mkdir -p $(BIN_DIR))
 
 # Compile parallel_mpi specifically with mpicxx
 parallel_mpi_omp: parallel_mpi.cpp
-	$(MPICXX) $(CXXFLAGS) $(OPTFLAGS) $(INCLUDES) -fopenmp $< -o ${BIN_DIR}/$@_omp $(LIBS)
+	$(MPICXX) $(CXXFLAGS) $(OPTFLAGS) $(INCLUDES) -fopenmp $< -o ${BIN_DIR}/$@ $(LIBS)
 parallel_mpi: parallel_mpi.cpp
 	$(MPICXX) $(CXXFLAGS) $(OPTFLAGS) $(INCLUDES) $< -o ${BIN_DIR}/$@ $(LIBS)
 

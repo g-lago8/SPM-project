@@ -61,11 +61,12 @@ void check_first(
     vector<double> &col_to_send,
     vector<double> &row_to_receive
 ){
-     if (M[se.start][se.start+diag - 1] < 0){
+    
+    if (M[se.start][se.start+diag - 1] < 0){ // we did not compute the element left, so we need the row
         *need_row = true;
         MPI_Irecv(row_to_receive.data(), N, MPI_DOUBLE, rank-1, 0, MPI_COMM_WORLD, &requests[1]);
     }
-    else{
+    else{ // we computed the element, so we need to send the column
         for (size_t i = 0; i <diag; i++ ){
             col_to_send[i] = M[se.start + i ][se.start+diag - 1];
         }
@@ -84,10 +85,11 @@ void check_last(
     vector <double> &row_to_send,
     vector <double> &col_to_receive
 ){
-    if (M[se.end +1][se.end + diag] < 0){
+    if (M[se.end +1][se.end + diag] < 0){ // we did not compute the element below, so we need the column
         *need_col =true;
         MPI_Irecv(col_to_receive.data(), N, MPI_DOUBLE, rank +1, 0, MPI_COMM_WORLD, &requests[0]) ;
-    } else{
+    } 
+    else{  // we computed the element, so we need to send the row
         for (size_t i= 0; i<diag;i++){
             row_to_send[i] = M[se.end + 1][se.end + i + 1];
         }
@@ -109,8 +111,6 @@ int main(int argc, char *argv[]){
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     if (rank == 0)
         std::cout << "using " << size << " processes" <<std::endl;
-    if (rank == 0)
-        std::cout<<argc<<endl;
 
     if (size < 2) {
         // abort if there is only one process
@@ -126,12 +126,7 @@ int main(int argc, char *argv[]){
     for (size_t row = se.start; row <= se.end; row++) {
         M[row][row] = double(row +1)/N;
     }
-    /*
-    if (rank == 0){
-        print_matrix(M);
-        cout << endl;
-    }
-    */
+
     vector <double> row_to_send(N, -1);
     vector <double> row_to_receive(N, -1);
     vector <double> col_to_send(N, -1);
@@ -218,7 +213,6 @@ int main(int argc, char *argv[]){
         for (size_t j = 0; j < N - 1; j++) {
             M[j +1][N-1] = col_to_receive[j];
             M[N-1][j +1] = col_to_receive[j];
-
         }
         auto col = N -1;
         auto row = 0;
@@ -245,7 +239,6 @@ int main(int argc, char *argv[]){
             }
         }
         cout << M[0][N-1] << endl;
-
     }
         
         if (rank == 1){
